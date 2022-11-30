@@ -1,0 +1,53 @@
+{
+    "name": "dne/storefront-dark-mode",
+    "description": "Storefront Dark Mode",
+    "version": "1.0.0",
+    "type": "shopware-platform-plugin",
+    "license": "MIT",
+    "require": {
+        "shopware/core": "~v6.4.0|~v6.5.0"
+    },
+    "authors": [
+        {
+            "name": "Open Source Plugins"
+        }
+    ],
+    "extra": {
+        "shopware-plugin-class": "Dne\\StorefrontDarkMode\\DneStorefrontDarkMode",
+        "copyright": "(c) David Neustadt",
+        "label": {
+            "de-DE": "Storefront Dark Mode",
+            "en-GB": "Storefront Dark Mode"
+        },
+        "description": {
+            "de-DE": "Dark Mode im Storefront",
+            "en-GB": "Dark Mode in the storefront"
+        },
+        "manufacturerLink": {
+            "de-DE": "https://store.shopware.com/open-source-plugins.html",
+            "en-GB": "https://store.shopware.com/en/open-source-plugins.html"
+        },
+        "supportLink": {
+            "de-DE": "https://github.com/dneustadt",
+            "en-GB": "https://github.com/dneustadt"
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Dne\\StorefrontDarkMode\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Dne\\StorefrontDarkMode\\Test\\": "tests/"
+        }
+    },
+    "suggest": {
+        "shopware/storefront": "Require '6.3'.",
+        "shopware/administration": "Require '6.3'. Allows you to to set up the plugin easily"
+    },
+    "conflict": {
+        "shopware/storefront": "<6,>=7",
+        "shopware/administration": "<6,>=7"
+    }
+}

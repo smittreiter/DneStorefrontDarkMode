@@ -16,13 +16,14 @@ The plugin offers the following features:
 
 Requirements
 -----
+* 0.1.0
+    * Shopware >= 6.4.8
 * 1.0.0
     * Shopware >= 6.5
 
 Pre-release requirements
 -----
-The plugin can be previewed on the current `6.4` branch of `shopware/platform`.
-Additionally, a feature flag must be enabled.
+To make the plugin work with Shopware `6.4.x`, a feature flag must be enabled.
 
 In your `.env` set the following before the installation of the plugin:
 ```

@@ -7,6 +7,7 @@
     <services>
         <service id="Dne\StorefrontDarkMode\Subscriber\ScssVariablesSubscriber">
             <argument type="service" id="shopware.filesystem.theme"/>
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService" />
             <tag name="kernel.event_subscriber"/>
         </service>
     </services>

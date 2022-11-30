@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/platform/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
+    <card>
+        <title>Colors settings (re-compile themes after changes)</title>
+        <title lang="de-DE">Farbeinstellungen (nach Änderungen Themes kompilieren)</title>
+        <input-field type="int">
+            <name>minLightness</name>
+            <label>Percentage of minimum lightness</label>
+            <label lang="de-DE">Minimale Helligkeit in Prozent</label>
+            <helpText>By increasing the number, the maximum blackness is reduced. Can be used to decrease the contrast.</helpText>
+            <helpText lang="de-DE">Je höher die Zahl, desto geringer der maximale Schwarzanteil. Kann zur Verringerung des Kontrasts verwendet werden.</helpText>
+            <defaultValue>15</defaultValue>
+            <placeholder>15</placeholder>
+            <min>0</min>
+            <max>100</max>
+        </input-field>
+        <input-field type="int">
+            <name>saturationThreshold</name>
+            <label>Percentage threshold for saturation</label>
+            <label lang="de-DE">Schwellenwert für Sättigung in Prozent</label>
+            <helpText>By increasing the number, more saturated colors are getting inverted. Can be used to control color precision.</helpText>
+            <helpText lang="de-DE">Je höher die Zahl, desto mehr gesättigte Farben werden invertiert. Kann genutzt werden um Farbechtheit zu kontrollieren</helpText>
+            <defaultValue>65</defaultValue>
+            <placeholder>65</placeholder>
+            <min>0</min>
+            <max>100</max>
+        </input-field>
+        <input-field type="text">
+            <name>ignoredHexCodes</name>
+            <label>Comma-seperated, unchangeable hex color values</label>
+            <label lang="de-DE">Kommaseparierte, unveränderbare Hex-Farbwerte</label>
+            <helpText>Color values included in the list are not being inverted. Example: "#123456, #654321"</helpText>
+            <helpText lang="de-DE">Farbwerte, die in der Liste enthalten sind, werden nicht invertiert. Beispiel: "#123456, #654321"</helpText>
+        </input-field>
+        <input-field type="bool">
+            <name>invertBlackShadows</name>
+            <label>Also invert absolute black shadows</label>
+            <label lang="de-DE">Absolut schwarze Schatten ebenfalls invertieren</label>
+            <defaultValue>false</defaultValue>
+        </input-field>
+        <input-field type="bool">
+            <name>keepWhiteOverlays</name>
+            <label>Keep half-transparent white overlays</label>
+            <label lang="de-DE">Halbtransparente weiße Overlays beibehalten</label>
+            <defaultValue>false</defaultValue>
+        </input-field>
+        <input-field type="bool">
+            <name>deactivateAutoDetect</name>
+            <label>Deactivate dark mode auto-detection</label>
+            <label lang="de-DE">Deaktiviere automatischen Dark-Mode</label>
+            <helpText>Detects if the dark mode is prefered by the system settings of the user.</helpText>
+            <helpText lang="de-DE">Erkennt an den Systemeinstellungen des Nutzers ob der Dark-Mode bevorzugt werden soll.</helpText>
+            <defaultValue>false</defaultValue>
+        </input-field>
+    </card>
+    <card>
+        <title>Storefront settings</title>
+        <title lang="de-DE">Storefront Einstellungen</title>
+        <input-field type="bool">
+            <name>hideToggle</name>
+            <label>Hide switch for dark mode in storefront</label>
+            <label lang="de-DE">Schalter für Dark-Mode im Storefront ausblenden</label>
+            <defaultValue>false</defaultValue>
+        </input-field>
+    </card>
+</config>

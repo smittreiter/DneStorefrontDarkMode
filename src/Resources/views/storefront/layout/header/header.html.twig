@@ -1,0 +1,18 @@
+{% sw_extends '@Storefront/storefront/layout/header/header.html.twig' %}
+
+{% block layout_header_search_toggle %}
+    {{ parent() }}
+    {% if config('DneStorefrontDarkMode.config.hideToggle') != true %}
+        {% block dne_storefront_dark_mode_toggle %}
+            <div class="col-auto">
+                <button class="btn header-actions-btn dne-storefront-dark-mode-btn"
+                        type="button"
+                        data-dne-storefront-dark-mode-toggle="true"
+                        data-dne-storefront-dark-mode-detection-disabled="{{ config('DneStorefrontDarkMode.config.deactivateAutoDetect') }}">
+                    {% sw_icon 'moon' %}
+                    {% sw_icon 'sun' %}
+                </button>
+            </div>
+        {% endblock %}
+    {% endif %}
+{% endblock %}

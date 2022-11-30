@@ -1,0 +1,10 @@
+{% sw_extends '@Storefront/storefront/layout/meta.html.twig' %}
+
+{% block layout_head_javascript_feature %}
+    <script>
+        if (localStorage.getItem('dne-storefront-dark-mode-theme')) {
+            document.documentElement.setAttribute('data-theme', localStorage.getItem('dne-storefront-dark-mode-theme'));
+        }
+    </script>
+    {{ parent() }}
+{% endblock %}

@@ -1,0 +1,27 @@
+.dne-storefront-dark-mode-btn {
+    .icon-moon {
+        display: none;
+    }
+}
+
+:root[data-theme="dark"] {
+    .icon-sun {
+        display: none;
+    }
+    .icon-moon {
+        display: inline-flex;
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        .dne-storefront-dark-mode-btn:not([data-dne-storefront-dark-mode-detection-disabled="1"]) {
+            .icon-sun {
+                display: none;
+            }
+            .icon-moon {
+                display: inline-flex;
+            }
+        }
+    }
+}

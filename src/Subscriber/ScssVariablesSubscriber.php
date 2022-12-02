@@ -16,7 +16,7 @@ use const PHP_EOL;
 class ScssVariablesSubscriber implements EventSubscriberInterface, ResetInterface
 {
     private const DEFAULT_MIN_LIGHTNESS = 15;
-    private const DEFAULT_SATURATION_THRESHOLD = 65;
+    private const DEFAULT_SATURATION_THRESHOLD = 55;
 
     private Filesystem $themeFilesystem;
 
@@ -108,7 +108,8 @@ class ScssVariablesSubscriber implements EventSubscriberInterface, ResetInterfac
 
             [$hue, $saturation, $lightness] = $this->hex2hsl($hexColor);
 
-            if ($saturation > $saturationThreshold) {
+            $naturalSaturation = max($saturation - abs($lightness - 50), 0);
+            if ($naturalSaturation > $saturationThreshold) {
                 continue;
             }
 
@@ -117,8 +118,8 @@ class ScssVariablesSubscriber implements EventSubscriberInterface, ResetInterfac
 
             $lightColors[] = sprintf('%s: %sdeg, %s%%, %s%%', $variable, $hue, $saturation, $lightness);
 
-            $lightness = 100 - $lightness;
-            $lightness = min($lightness + $minLightness, 100);
+            $lightnessIncrement = ($lightness / 100) * $minLightness;
+            $lightness = min(100 - $lightness + $lightnessIncrement, 100);
 
             $darkColors[] = sprintf('%s: %sdeg, %s%%, %s%%', $variable, $hue, $saturation, $lightness);
         }
@@ -128,11 +129,10 @@ class ScssVariablesSubscriber implements EventSubscriberInterface, ResetInterfac
         }
 
         $css .= PHP_EOL . sprintf(':root { %s }', implode('; ', $lightColors)) . PHP_EOL;
+        $css .= sprintf(':root[data-theme="dark"] { %s }', implode('; ', $darkColors));
 
-        if ($deactivateAutoDetect) {
-            $css .= sprintf(':root[data-theme="dark"] { %s }', implode('; ', $darkColors));
-        } else {
-            $css .= sprintf('@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { %s } }', implode('; ', $darkColors));
+        if (!$deactivateAutoDetect) {
+            $css .= PHP_EOL . sprintf('@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { %s } }', implode('; ', $darkColors));
         }
 
         $this->themeFilesystem->put($cssPath, $css);

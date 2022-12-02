@@ -37,6 +37,11 @@
             "Dne\\StorefrontDarkMode\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Dne\\StorefrontDarkMode\\Test\\": "tests/"
+        }
+    },
     "suggest": {
         "shopware/storefront": "Require '6.4'.",
         "shopware/administration": "Require '6.4'. Allows you to to set up the plugin easily"

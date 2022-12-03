@@ -19,8 +19,8 @@
             <name>saturationThreshold</name>
             <label>Percentage threshold for color contrast</label>
             <label lang="de-DE">Schwellenwert für Farbkontrast in Prozent</label>
-            <helpText>By decreasing the number, more saturated colors are getting shaded. Can be used to control color precision.</helpText>
-            <helpText lang="de-DE">Je geringer die Zahl, desto mehr gesättigte Farben werden schattiert. Kann genutzt werden um Farbechtheit zu kontrollieren</helpText>
+            <helpText>By increasing the number, more saturated colors are getting shaded. Can be used to control color precision.</helpText>
+            <helpText lang="de-DE">Je höher die Zahl, desto mehr gesättigte Farben werden schattiert. Kann genutzt werden um Farbechtheit zu kontrollieren</helpText>
             <defaultValue>55</defaultValue>
             <placeholder>55</placeholder>
             <min>0</min>
@@ -51,6 +51,12 @@
             <label lang="de-DE">Deaktiviere automatischen Dark-Mode</label>
             <helpText>Detects if the dark mode is prefered by the system settings of the user.</helpText>
             <helpText lang="de-DE">Erkennt an den Systemeinstellungen des Nutzers ob der Dark-Mode bevorzugt werden soll.</helpText>
+            <defaultValue>false</defaultValue>
+        </input-field>
+        <input-field type="bool">
+            <name>useHslVariables</name>
+            <label>Use HSL color format</label>
+            <label lang="de-DE">HSL Farbformat verwenden</label>
             <defaultValue>false</defaultValue>
         </input-field>
     </card>

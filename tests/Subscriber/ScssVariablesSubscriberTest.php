@@ -58,8 +58,25 @@ class ScssVariablesSubscriberTest extends TestCase
     {
         $domain = 'DneStorefrontDarkMode.config.';
 
-        yield 'default config' => [
+        yield 'default config / hex' => [
             [],
+            <<<EOF
+.black { color: #000; }
+.white { color: #fff; }
+.green { color: #002200; }
+EOF,
+            <<<EOF
+.black { color: var(--color-000); }
+.white { color: var(--color-fff); }
+.green { color: #002200; }
+:root { --color-000: #000; --color-fff: #fff }
+:root[data-theme="dark"] { --color-000: #fff; --color-fff: #262626 }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --color-000: #fff; --color-fff: #262626 } }
+EOF
+        ];
+
+        yield 'default config / hsl' => [
+            [$domain . 'useHslVariables' => true],
             <<<EOF
 .black { color: #000; }
 .white { color: #fff; }
@@ -75,8 +92,8 @@ EOF,
 EOF
         ];
 
-        yield 'min lightness / saturation threshold' => [
-            [$domain . 'minLightness' => 30, $domain . 'saturationThreshold' => 70],
+        yield 'min lightness / saturation threshold / hsl' => [
+            [$domain . 'useHslVariables' => true, $domain . 'minLightness' => 30, $domain . 'saturationThreshold' => 70],
             <<<EOF
 .black { color: #000; }
 .white { color: #fff; }
@@ -92,8 +109,8 @@ EOF,
 EOF
         ];
 
-        yield 'deactivate auto detetion' => [
-            [$domain . 'deactivateAutoDetect' => true],
+        yield 'deactivate auto detetion / hsl' => [
+            [$domain . 'useHslVariables' => true, $domain . 'deactivateAutoDetect' => true],
             <<<EOF
 .black { color: #000; }
 EOF,

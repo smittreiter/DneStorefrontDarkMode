@@ -13,7 +13,7 @@ use Symfony\Contracts\Service\ResetInterface;
 use const DIRECTORY_SEPARATOR;
 use const PHP_EOL;
 
-class ScssVariablesSubscriber implements EventSubscriberInterface, ResetInterface
+class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
 {
     private const DEFAULT_MIN_LIGHTNESS = 15;
     private const DEFAULT_SATURATION_THRESHOLD = 55;

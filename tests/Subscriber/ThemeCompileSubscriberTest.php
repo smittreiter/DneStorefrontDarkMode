@@ -2,7 +2,7 @@
 
 namespace Dne\StorefrontDarkMode\Test\Subscriber;
 
-use Dne\StorefrontDarkMode\Subscriber\ScssVariablesSubscriber;
+use Dne\StorefrontDarkMode\Subscriber\ThemeCompileSubscriber;
 use Generator;
 use League\Flysystem\Filesystem;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -11,7 +11,7 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Shopware\Storefront\Theme\Event\ThemeCopyToLiveEvent;
 use const DIRECTORY_SEPARATOR;
 
-class ScssVariablesSubscriberTest extends TestCase
+class ThemeCompileSubscriberTest extends TestCase
 {
     /**
      * @var MockObject|Filesystem
@@ -23,14 +23,14 @@ class ScssVariablesSubscriberTest extends TestCase
      */
     private $configService;
 
-    private ScssVariablesSubscriber $subscriber;
+    private ThemeCompileSubscriber $subscriber;
 
     public function setUp(): void
     {
         $this->themeFilesystem = $this->createMock(Filesystem::class);
         $this->configService = $this->createMock(SystemConfigService::class);
 
-        $this->subscriber = new ScssVariablesSubscriber(
+        $this->subscriber = new ThemeCompileSubscriber(
             $this->themeFilesystem,
             $this->configService
         );

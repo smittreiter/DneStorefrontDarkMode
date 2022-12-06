@@ -77,6 +77,8 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
         // configuration
         $minLightness = $config[$domain . '.minLightness'] ?? self::DEFAULT_MIN_LIGHTNESS;
         $saturationThreshold = $config[$domain . '.saturationThreshold'] ?? self::DEFAULT_SATURATION_THRESHOLD;
+        $grayscaleTint = isset($config[$domain . '.grayscaleTint']) ? current($this->hex2hsl($config[$domain . '.grayscaleTint'])) : null;
+        $grayscaleTintAmount = $config[$domain . '.grayscaleTintAmount'] ?? 0;
         $ignoredHexCodes = explode(',', str_replace(' ', '', strtolower($config[$domain . '.ignoredHexCodes'] ?? '')));
         $invertBlackShadows = $config[$domain . '.invertBlackShadows'] ?? false;
         $keepWhiteOverlays = $config[$domain . '.keepWhiteOverlays'] ?? false;
@@ -125,6 +127,11 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
 
             $lightnessIncrement = ($lightness / 100) * $minLightness;
             $lightness = min(100 - $lightness + $lightnessIncrement, 100);
+
+            if ($grayscaleTint !== null && $grayscaleTintAmount && ($hue + $saturation) === 0.0) {
+                $hue = $grayscaleTint;
+                $saturation = min($saturation + $grayscaleTintAmount, 100);
+            }
 
             $darkColors[] = $useHslVariables
                 ? sprintf('%s: %sdeg, %s%%, %s%%', $variable, $hue, $saturation, $lightness)

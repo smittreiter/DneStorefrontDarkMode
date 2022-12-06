@@ -10,13 +10,14 @@ The plugin offers the following features:
 * Compatible with all themes
 * Threshold for colors to be altered by saturation
 * Set a minimum level of lightness for reduced contrast
+* Tint grayscale for warmer/colder appearance
 * Exclude colors from being inverted
 * Auto-detect preferred color scheme
 * Toggle between light and dark mode within storefront
 
 Requirements
 -----
-* 0.1.0
+* 0.2.0
     * Shopware >= 6.4.8
 * 1.0.0
     * Shopware >= 6.5

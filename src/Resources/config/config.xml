@@ -26,6 +26,24 @@
             <min>0</min>
             <max>100</max>
         </input-field>
+        <input-field type="colorpicker">
+            <name>grayscaleTint</name>
+            <label>Hue for tinting grayscales</label>
+            <label lang="de-DE">Farbton zur Färbung von Graustufen</label>
+            <helpText>Choose a color hue to tint grayscales</helpText>
+            <helpText lang="de-DE">Ein Farbton der verwendet werden kann um Graustufen einzufärben</helpText>
+        </input-field>
+        <input-field type="int">
+            <name>grayscaleTintAmount</name>
+            <label>Percentage for grayscale tining</label>
+            <label lang="de-DE">Prozentwert zum Einfärben von Graustufen</label>
+            <helpText>A percentage for tining grayscales by the hue chosen. No more than 5 percent are recommended.</helpText>
+            <helpText lang="de-DE">Der prozentuale Wert zur Einfärbung von Graustufen in die ausgewählte Farbe. Mehr als 5 Prozent sind nicht empfehlenswert.</helpText>
+            <defaultValue>0</defaultValue>
+            <placeholder>0</placeholder>
+            <min>0</min>
+            <max>100</max>
+        </input-field>
         <input-field type="text">
             <name>ignoredHexCodes</name>
             <label>Comma-seperated, unchangeable hex color values</label>

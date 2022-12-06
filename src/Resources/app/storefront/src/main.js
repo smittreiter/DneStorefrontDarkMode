@@ -34,5 +34,12 @@ class DneStorefrontDarkModePlugin extends Plugin {
     }
 }
 
-const PluginManager = window.PluginManager;
-PluginManager.register('DneStorefrontDarkModePlugin', DneStorefrontDarkModePlugin, '[data-dne-storefront-dark-mode-toggle]');
+window.PluginManager.register('DneStorefrontDarkModePlugin', DneStorefrontDarkModePlugin, '[data-dne-storefront-dark-mode-toggle]');
+
+document.addEventListener('DOMContentLoaded', () => {
+    window.PluginManager.getPluginInstances('OffcanvasMenu').forEach((pluginInstance) => {
+        pluginInstance.$emitter.subscribe('openMenu', () => {
+            window.PluginManager.initializePlugin('DneStorefrontDarkModePlugin', '[data-dne-storefront-dark-mode-toggle]');
+        });
+    });
+}, false);

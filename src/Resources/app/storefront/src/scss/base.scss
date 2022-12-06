@@ -6,6 +6,9 @@
     .icon-moon {
         display: none;
     }
+    .icon > svg {
+        top: 0.25em;
+    }
 }
 
 :root[data-theme="dark"] {

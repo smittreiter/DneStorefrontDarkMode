@@ -1,7 +1,7 @@
 {
     "name": "dne/storefront-dark-mode",
     "description": "Storefront Dark Mode",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "type": "shopware-platform-plugin",
     "license": "MIT",
     "require": {

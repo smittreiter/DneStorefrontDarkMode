@@ -109,6 +109,21 @@ EOF,
 EOF
         ];
 
+        yield 'grayscale tinting / hsl' => [
+            [$domain . 'useHslVariables' => true, $domain . 'grayscaleTint' => '#0000ff', $domain . 'grayscaleTintAmount' => 5],
+            <<<EOF
+.black { color: #000; }
+.white { color: #fff; }
+EOF,
+            <<<EOF
+.black { color: hsl(var(--color-000)); }
+.white { color: hsl(var(--color-fff)); }
+:root { --color-000: 0deg, 0%, 0%; --color-fff: 0deg, 0%, 100% }
+:root[data-theme="dark"] { --color-000: 240deg, 5%, 100%; --color-fff: 240deg, 5%, 15% }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --color-000: 240deg, 5%, 100%; --color-fff: 240deg, 5%, 15% } }
+EOF
+        ];
+
         yield 'deactivate auto detetion / hsl' => [
             [$domain . 'useHslVariables' => true, $domain . 'deactivateAutoDetect' => true],
             <<<EOF

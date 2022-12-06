@@ -77,7 +77,7 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
         // configuration
         $minLightness = $config[$domain . '.minLightness'] ?? self::DEFAULT_MIN_LIGHTNESS;
         $saturationThreshold = $config[$domain . '.saturationThreshold'] ?? self::DEFAULT_SATURATION_THRESHOLD;
-        $grayscaleTint = isset($config[$domain . '.grayscaleTint']) ? current($this->hex2hsl($config[$domain . '.grayscaleTint'])) : null;
+        $grayscaleTint = !empty($config[$domain . '.grayscaleTint']) ? current($this->hex2hsl($config[$domain . '.grayscaleTint'])) : null;
         $grayscaleTintAmount = $config[$domain . '.grayscaleTintAmount'] ?? 0;
         $ignoredHexCodes = explode(',', str_replace(' ', '', strtolower($config[$domain . '.ignoredHexCodes'] ?? '')));
         $invertBlackShadows = $config[$domain . '.invertBlackShadows'] ?? false;

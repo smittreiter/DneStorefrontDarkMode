@@ -21,8 +21,8 @@
             <label lang="de-DE">Schwellenwert für Farbkontrast in Prozent</label>
             <helpText>By increasing the number, more saturated colors are getting shaded. Can be used to control color precision.</helpText>
             <helpText lang="de-DE">Je höher die Zahl, desto mehr gesättigte Farben werden schattiert. Kann genutzt werden um Farbechtheit zu kontrollieren</helpText>
-            <defaultValue>55</defaultValue>
-            <placeholder>55</placeholder>
+            <defaultValue>65</defaultValue>
+            <placeholder>65</placeholder>
             <min>0</min>
             <max>100</max>
         </input-field>
@@ -53,15 +53,9 @@
             <helpText lang="de-DE">Farbwerte, die in der Liste enthalten sind, werden nicht schattiert. Beispiel: "#123456, #654321"</helpText>
         </input-field>
         <input-field type="bool">
-            <name>invertBlackShadows</name>
-            <label>Also invert absolute black shadows</label>
-            <label lang="de-DE">Absolut schwarze Schatten ebenfalls invertieren</label>
-            <defaultValue>false</defaultValue>
-        </input-field>
-        <input-field type="bool">
-            <name>keepWhiteOverlays</name>
-            <label>Keep half-transparent white overlays</label>
-            <label lang="de-DE">Halbtransparente weiße Overlays beibehalten</label>
+            <name>invertShadows</name>
+            <label>Also invert shadows</label>
+            <label lang="de-DE">Schatten ebenfalls invertieren</label>
             <defaultValue>false</defaultValue>
         </input-field>
         <input-field type="bool">

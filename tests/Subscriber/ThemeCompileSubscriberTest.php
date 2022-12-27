@@ -63,12 +63,12 @@ class ThemeCompileSubscriberTest extends TestCase
             <<<EOF
 .black { color: #000; }
 .white { color: #fff; }
-.green { color: #002200; }
+.green { color: #005500; }
 EOF,
             <<<EOF
 .black { color: var(--color-000); }
 .white { color: var(--color-fff); }
-.green { color: #002200; }
+.green { color: #005500; }
 :root { --color-000: #000; --color-fff: #fff }
 :root[data-theme="dark"] { --color-000: #fff; --color-fff: #262626 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --color-000: #fff; --color-fff: #262626 } }
@@ -80,15 +80,45 @@ EOF
             <<<EOF
 .black { color: #000; }
 .white { color: #fff; }
-.green { color: #002200; }
+.green { color: #005500; }
 EOF,
             <<<EOF
 .black { color: hsl(var(--color-000)); }
 .white { color: hsl(var(--color-fff)); }
-.green { color: #002200; }
+.green { color: #005500; }
 :root { --color-000: 0deg, 0%, 0%; --color-fff: 0deg, 0%, 100% }
 :root[data-theme="dark"] { --color-000: 0deg, 0%, 100%; --color-fff: 0deg, 0%, 15% }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --color-000: 0deg, 0%, 100%; --color-fff: 0deg, 0%, 15% } }
+EOF
+        ];
+
+        yield 'default config / convert rgba' => [
+            [],
+            <<<EOF
+.white { color: rgba(255, 255, 255, 0.75); }
+EOF,
+            <<<EOF
+.white { color: hsla(var(--color-rgb-255-255-255), 0.75); }
+:root { --color-rgb-255-255-255: 0deg, 0%, 100% }
+:root[data-theme="dark"] { --color-rgb-255-255-255: 0deg, 0%, 15% }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --color-rgb-255-255-255: 0deg, 0%, 15% } }
+EOF
+        ];
+
+        yield 'default config / keep box shadow' => [
+            [],
+            <<<EOF
+.black { color: #000; }
+.shadow-hex { box-shadow: 10px 5px 5px #000; }
+.shadow-rgb { box-shadow: 10px 5px 5px rgba(0, 0, 0, 0.5); }
+EOF,
+            <<<EOF
+.black { color: var(--color-000); }
+.shadow-hex { box-shadow: 10px 5px 5px hsl(0deg, 0%, 0%); }
+.shadow-rgb { box-shadow: 10px 5px 5px hsla(0deg, 0%, 0%, 0.5); }
+:root { --color-000: #000 }
+:root[data-theme="dark"] { --color-000: #fff }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --color-000: #fff } }
 EOF
         ];
 

@@ -16,7 +16,7 @@ use const PHP_EOL;
 class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
 {
     private const DEFAULT_MIN_LIGHTNESS = 15;
-    private const DEFAULT_SATURATION_THRESHOLD = 55;
+    private const DEFAULT_SATURATION_THRESHOLD = 65;
 
     private Filesystem $themeFilesystem;
 
@@ -75,36 +75,55 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
         $config = $this->configService->getDomain($domain, $this->currentSalesChannelId, true);
 
         // configuration
-        $minLightness = $config[$domain . '.minLightness'] ?? self::DEFAULT_MIN_LIGHTNESS;
         $saturationThreshold = $config[$domain . '.saturationThreshold'] ?? self::DEFAULT_SATURATION_THRESHOLD;
-        $grayscaleTint = !empty($config[$domain . '.grayscaleTint']) ? current($this->hex2hsl($config[$domain . '.grayscaleTint'])) : null;
-        $grayscaleTintAmount = $config[$domain . '.grayscaleTintAmount'] ?? 0;
         $ignoredHexCodes = explode(',', str_replace(' ', '', strtolower($config[$domain . '.ignoredHexCodes'] ?? '')));
-        $invertBlackShadows = $config[$domain . '.invertBlackShadows'] ?? false;
-        $keepWhiteOverlays = $config[$domain . '.keepWhiteOverlays'] ?? false;
+        $invertShadows = $config[$domain . '.invertShadows'] ?? false;
         $deactivateAutoDetect = $config[$domain . '.deactivateAutoDetect'] ?? false;
         $useHslVariables = $config[$domain . '.useHslVariables'] ?? false;
 
-        if (!$invertBlackShadows) {
-            $css = preg_replace_callback('/box-shadow:(.*)#(0{3})/', function (array $matches): string {
-                return str_replace('#000', sprintf('hsl(%sdeg, %s%%, %s%%)', ...$this->hex2hsl('#000')), $matches[0]);
+        if (!$invertShadows) {
+            $css = preg_replace_callback('/box-shadow:(.*)#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})/', function (array $matches): string {
+                $search = sprintf('#%s', $matches[2]);
+
+                return str_replace($search, sprintf('hsl(%sdeg, %s%%, %s%%)', ...$this->hex2hsl($search)), $matches[0]);
+            }, $css);
+            $css = preg_replace_callback('/box-shadow:(.*)rgba\((.*), (.*), (.*), (.*)\)/', function (array $matches): string {
+                [,, $r, $g, $b, $a] = $matches;
+                $hsla = $this->rgb2hsl((float) $r, (float) $g, (float) $b);
+                $hsla[] = $a;
+                $search = sprintf('rgba(%s, %s, %s, %s)', $r, $g, $b, $a);
+
+                return str_replace($search, sprintf('hsla(%sdeg, %s%%, %s%%, %s)', ...$hsla), $matches[0]);
             }, $css);
         }
 
-        if (!$keepWhiteOverlays) {
-            $css = preg_replace_callback('/(background|background-color):(.*)rgba\(255, 255, 255, (.*)\)/', function (array $matches) use ($useHslVariables): string {
-                $rgba = sprintf('rgba(255, 255, 255, %s)', $matches[3]);
-                $replace = $useHslVariables
-                    ? sprintf('hsla(var(--color-fff), %s)', $matches[3])
-                    : sprintf('linear-gradient(to bottom, var(--color-fff) calc((%1$s - 1) * 10000%%), transparent calc(%1$s * 10000%%))', $matches[3]);
+        $lightColors = $darkColors = [];
 
-                return str_replace($rgba, $replace, $matches[0]);
-            }, $css);
-        }
+        $css = preg_replace_callback(
+            '/rgba\((.*), (.*), (.*), (.*)\)/',
+            function (array $matches) use (&$lightColors, &$darkColors, $config): string {
+                [$original, $r, $g, $b, $a] = $matches;
+
+                [$hue, $saturation, $lightness] = $this->rgb2hsl((float) $r, (float) $g, (float) $b);
+
+                if ((float) $a >= 0.5 && $lightness < 50) {
+                    return $original;
+                }
+
+                $variable = sprintf('--color-rgb-%s-%s-%s', $r, $g, $b);
+                $lightColors[] = sprintf('%s: %sdeg, %s%%, %s%%', $variable, $hue, $saturation, $lightness);
+
+                [$hue, $saturation, $lightness] = $this->darken($hue, $saturation, $lightness, $config);
+
+                $darkColors[] = sprintf('%s: %sdeg, %s%%, %s%%', $variable, $hue, $saturation, $lightness);
+
+                return sprintf('hsla(var(%s), %s)', $variable, $a);
+            },
+            $css
+        );
 
         preg_match_all('/#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})/', $css, $matches);
         $hexColors = array_unique($matches[0] ?? []);
-        $lightColors = $darkColors = [];
 
         foreach ($hexColors as $hexColor) {
             if (in_array($hexColor, $ignoredHexCodes, true)) {
@@ -125,13 +144,7 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
                 ? sprintf('%s: %sdeg, %s%%, %s%%', $variable, $hue, $saturation, $lightness)
                 : sprintf('%s: %s', $variable, $hexColor);
 
-            $lightnessIncrement = ($lightness / 100) * $minLightness;
-            $lightness = min(100 - $lightness + $lightnessIncrement, 100);
-
-            if ($grayscaleTint !== null && $grayscaleTintAmount && ($hue + $saturation) === 0.0) {
-                $hue = $grayscaleTint;
-                $saturation = min($saturation + $grayscaleTintAmount, 100);
-            }
+            [$hue, $saturation, $lightness] = $this->darken($hue, $saturation, $lightness, $config);
 
             $darkColors[] = $useHslVariables
                 ? sprintf('%s: %sdeg, %s%%, %s%%', $variable, $hue, $saturation, $lightness)
@@ -141,6 +154,9 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
         if (empty($darkColors)) {
             return;
         }
+
+        $lightColors = array_unique($lightColors);
+        $darkColors = array_unique($darkColors);
 
         $css .= PHP_EOL . sprintf(':root { %s }', implode('; ', $lightColors)) . PHP_EOL;
         $css .= sprintf(':root[data-theme="dark"] { %s }', implode('; ', $darkColors));
@@ -158,9 +174,18 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
         if (strlen($hexstr) === 3) {
             $hexstr = $hexstr[0] . $hexstr[0] . $hexstr[1] . $hexstr[1] . $hexstr[2] . $hexstr[2];
         }
-        $r = hexdec($hexstr[0] . $hexstr[1]) / 255;
-        $g = hexdec($hexstr[2] . $hexstr[3]) / 255;
-        $b = hexdec($hexstr[4] . $hexstr[5]) / 255;
+        $r = hexdec($hexstr[0] . $hexstr[1]);
+        $g = hexdec($hexstr[2] . $hexstr[3]);
+        $b = hexdec($hexstr[4] . $hexstr[5]);
+
+        return $this->rgb2hsl((float) $r, (float) $g, (float) $b);
+    }
+
+    private function rgb2hsl(float $r, float $g, float $b): array
+    {
+        $r /= 255;
+        $g /= 255;
+        $b /= 255;
 
         $max = max($r, $g, $b);
         $min = min($r, $g, $b);
@@ -261,5 +286,25 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
         }
 
         return '#' . $r . $g . $b;
+    }
+
+    private function darken(float $hue, float $saturation, float $lightness, array $config): array
+    {
+        $domain = 'DneStorefrontDarkMode.config';
+        $minLightness = $config[$domain . '.minLightness'] ?? self::DEFAULT_MIN_LIGHTNESS;
+        $grayscaleTint = !empty($config[$domain . '.grayscaleTint'])
+            ? current($this->hex2hsl($config[$domain . '.grayscaleTint']))
+            : null;
+        $grayscaleTintAmount = $config[$domain . '.grayscaleTintAmount'] ?? 0;
+
+        $lightnessIncrement = ($lightness / 100) * $minLightness;
+        $lightness = min(100 - $lightness + $lightnessIncrement, 100);
+
+        if ($grayscaleTint !== null && $grayscaleTintAmount && ($hue + $saturation) === 0.0) {
+            $hue = $grayscaleTint;
+            $saturation = min($saturation + $grayscaleTintAmount, 100);
+        }
+
+        return [$hue, $saturation, $lightness];
     }
 }

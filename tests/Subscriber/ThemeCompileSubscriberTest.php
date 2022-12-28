@@ -124,7 +124,7 @@ EOF
             [],
             <<<EOF
 .black { color: #000; }
-`:root { --white-immutable:  #fff; --black-immutable:rgba(255, 255, 255, 1) }`
+:root { --white-immutable:  #fff; --black-immutable:rgba(255, 255, 255, 1) }
 EOF,
             <<<EOF
 .black { color: var(--color-000); }

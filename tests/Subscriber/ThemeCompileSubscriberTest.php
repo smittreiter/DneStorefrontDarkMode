@@ -95,13 +95,43 @@ EOF
         yield 'default config / convert rgba' => [
             [],
             <<<EOF
-.white { color: rgba(255, 255, 255, 0.75); }
+.white { color: rgba(255,255,255, 0.75); }
 EOF,
             <<<EOF
 .white { color: hsla(var(--color-rgb-255-255-255), 0.75); }
 :root { --color-rgb-255-255-255: 0deg, 0%, 100% }
 :root[data-theme="dark"] { --color-rgb-255-255-255: 0deg, 0%, 15% }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --color-rgb-255-255-255: 0deg, 0%, 15% } }
+EOF
+        ];
+
+        yield 'default config / convert color names' => [
+            [],
+            <<<EOF
+.black { color: black; }
+.white { border: 10px White solid; }
+EOF,
+            <<<EOF
+.black { color: var(--color-000); }
+.white { border: 10px var(--color-fff) solid; }
+:root { --color-000: #000; --color-fff: #fff }
+:root[data-theme="dark"] { --color-000: #fff; --color-fff: #262626 }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --color-000: #fff; --color-fff: #262626 } }
+EOF
+        ];
+
+        yield 'default config / keep immutable css variables' => [
+            [],
+            <<<EOF
+.black { color: #000; }
+`:root { --white-immutable:  #fff; --black-immutable:rgba(255, 255, 255, 1) }`
+EOF,
+            <<<EOF
+.black { color: var(--color-000); }
+:root { --white-immutable:#fff; --black-immutable:rgba(255, 255, 255, 1) }
+:root { --color-000: #000 }
+:root[data-theme="dark"] { --color-000: #fff }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --color-000: #fff } }
 EOF
         ];
 

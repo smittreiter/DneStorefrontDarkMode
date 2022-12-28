@@ -2,6 +2,7 @@
 
 namespace Dne\StorefrontDarkMode\Subscriber;
 
+use Dne\StorefrontDarkMode\Subscriber\Data\CssColors;
 use League\Flysystem\FileNotFoundException;
 use League\Flysystem\Filesystem;
 use Shopware\Core\Framework\Plugin\Event\PluginPreDeactivateEvent;
@@ -80,49 +81,45 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
         $invertShadows = $config[$domain . '.invertShadows'] ?? false;
         $deactivateAutoDetect = $config[$domain . '.deactivateAutoDetect'] ?? false;
         $useHslVariables = $config[$domain . '.useHslVariables'] ?? false;
+        $keepNamedColors = $config[$domain . 'keepNamedColors'] ?? false;
+
+        if (!$keepNamedColors) {
+            $css = $this->convertColorNames($css);
+        }
 
         if (!$invertShadows) {
-            $css = preg_replace_callback('/box-shadow:(.*)#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})/', function (array $matches): string {
-                $search = sprintf('#%s', $matches[2]);
-
-                return str_replace($search, sprintf('hsl(%sdeg, %s%%, %s%%)', ...$this->hex2hsl($search)), $matches[0]);
-            }, $css);
-            $css = preg_replace_callback('/box-shadow:(.*)rgba\((.*), (.*), (.*), (.*)\)/', function (array $matches): string {
-                [,, $r, $g, $b, $a] = $matches;
-                $hsla = $this->rgb2hsl((float) $r, (float) $g, (float) $b);
-                $hsla[] = $a;
-                $search = sprintf('rgba(%s, %s, %s, %s)', $r, $g, $b, $a);
-
-                return str_replace($search, sprintf('hsla(%sdeg, %s%%, %s%%, %s)', ...$hsla), $matches[0]);
-            }, $css);
+            $css = $this->conserveShadows($css);
         }
 
         $lightColors = $darkColors = [];
 
+        // remove whitespaces before values of immutable variables to be matchable by negative lookbehind
+        $css = preg_replace('/-immutable:\s+/','-immutable:', $css);
+
         $css = preg_replace_callback(
-            '/rgba\((.*), (.*), (.*), (.*)\)/',
+            '/(?<!-immutable:)rgba\((.*?),(.*?),(.*?),(.*?)\)/',
             function (array $matches) use (&$lightColors, &$darkColors, $config): string {
                 [$original, $r, $g, $b, $a] = $matches;
 
                 [$hue, $saturation, $lightness] = $this->rgb2hsl((float) $r, (float) $g, (float) $b);
 
-                if ((float) $a >= 0.5 && $lightness < 50) {
+                if ((float) $a <= 0.5 && $lightness < 50) {
                     return $original;
                 }
 
-                $variable = sprintf('--color-rgb-%s-%s-%s', $r, $g, $b);
+                $variable = sprintf('--color-rgb-%s-%s-%s', trim($r), trim($g), trim($b));
                 $lightColors[] = sprintf('%s: %sdeg, %s%%, %s%%', $variable, $hue, $saturation, $lightness);
 
                 [$hue, $saturation, $lightness] = $this->darken($hue, $saturation, $lightness, $config);
 
                 $darkColors[] = sprintf('%s: %sdeg, %s%%, %s%%', $variable, $hue, $saturation, $lightness);
 
-                return sprintf('hsla(var(%s), %s)', $variable, $a);
+                return sprintf('hsla(var(%s), %s)', $variable, trim($a));
             },
             $css
         );
 
-        preg_match_all('/#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})/', $css, $matches);
+        preg_match_all('/(?<!-immutable:)#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})/', $css, $matches);
         $hexColors = array_unique($matches[0] ?? []);
 
         foreach ($hexColors as $hexColor) {
@@ -306,5 +303,42 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
         }
 
         return [$hue, $saturation, $lightness];
+    }
+
+    private function conserveShadows(string $css): string
+    {
+        $css = preg_replace_callback('/box-shadow:([^;]*)#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})(.*?);/', function (array $matches): string {
+            $search = sprintf('#%s', $matches[2]);
+
+            return str_replace($search, sprintf('hsl(%sdeg, %s%%, %s%%)', ...$this->hex2hsl($search)), $matches[0]);
+        }, $css);
+
+        return preg_replace_callback('/box-shadow:([^;]*)rgba\((.*?),(.*?),(.*?),(.*?)\)(.*?);/', function (array $matches): string {
+            [,, $r, $g, $b, $a] = $matches;
+            $hsla = $this->rgb2hsl((float) $r, (float) $g, (float) $b);
+            $hsla[] = trim($a);
+            $search = sprintf('rgba(%s,%s,%s,%s)', $r, $g, $b, $a);
+
+            return str_replace($search, sprintf('hsla(%sdeg, %s%%, %s%%, %s)', ...$hsla), $matches[0]);
+        }, $css);
+    }
+
+    private function convertColorNames(string $css): string
+    {
+        $colors = CssColors::MAPPINGS;
+
+        return preg_replace_callback(
+            '/:(.*?)(' . implode('|', array_keys($colors)) . ')( +|;)/i',
+            function (array $matches) use ($colors): string {
+                [$original,, $color] = $matches;
+
+                if (!\array_key_exists(strtolower($color), $colors)) {
+                    return $original;
+                }
+
+                return str_replace($color, $colors[strtolower($color)], $original);
+            },
+            $css
+        );
     }
 }

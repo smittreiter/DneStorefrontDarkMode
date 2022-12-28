@@ -15,9 +15,25 @@ The plugin offers the following features:
 * Auto-detect preferred color scheme
 * Toggle between light and dark mode within storefront
 
+### Using immutable colors
+
+By declaring CSS variables using the suffix `-immutable`, color values may be stored that are supposed to be immutable, disregarding whether dark or light mode is used.
+
+```css
+:root { 
+    --white-immutable: #fff; 
+}
+
+body {
+    background-color: var(--white-immutable);
+}
+```
+
+In this example `--white-immutable` will be `#fff` in both light and dark mode.
+
 Requirements
 -----
-* 0.2.0
+* 0.3.0
     * Shopware >= 6.4.8
 * 1.0.0
     * Shopware >= 6.5

@@ -72,6 +72,14 @@
             <label lang="de-DE">HSL Farbformat verwenden</label>
             <defaultValue>false</defaultValue>
         </input-field>
+        <input-field type="bool">
+            <name>keepNamedColors</name>
+            <label>Keep named CSS colors</label>
+            <label lang="de-DE">Benannte Farben beibehalten</label>
+            <helpText>If literal color names are used in the CSS like "white" or "blue", then keep the original color value.</helpText>
+            <helpText lang="de-DE">Wenn Farben mit wörtlichen Namen im CSS verwendet werden, z.B. "white" oder "blue", dann behalte den ursprünglichen Farbwert.</helpText>
+            <defaultValue>false</defaultValue>
+        </input-field>
     </card>
     <card>
         <title>Storefront settings</title>

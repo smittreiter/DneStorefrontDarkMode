@@ -114,7 +114,7 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
 
                 $darkColors[] = sprintf('%s: %sdeg, %s%%, %s%%', $variable, $hue, $saturation, $lightness);
 
-                return sprintf('hsla(var(%s), %s)', $variable, trim($a));
+                return sprintf('hsla(var(%s),%s)', $variable, trim($a));
             },
             $css
         );
@@ -310,7 +310,7 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
         $css = preg_replace_callback('/box-shadow:([^;]*)#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})(.*?);/', function (array $matches): string {
             $search = sprintf('#%s', $matches[2]);
 
-            return str_replace($search, sprintf('hsl(%sdeg, %s%%, %s%%)', ...$this->hex2hsl($search)), $matches[0]);
+            return str_replace($search, sprintf('hsl(%sdeg,%s%%,%s%%)', ...$this->hex2hsl($search)), $matches[0]);
         }, $css);
 
         return preg_replace_callback('/box-shadow:([^;]*)rgba\((.*?),(.*?),(.*?),(.*?)\)(.*?);/', function (array $matches): string {
@@ -319,7 +319,7 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
             $hsla[] = trim($a);
             $search = sprintf('rgba(%s,%s,%s,%s)', $r, $g, $b, $a);
 
-            return str_replace($search, sprintf('hsla(%sdeg, %s%%, %s%%, %s)', ...$hsla), $matches[0]);
+            return str_replace($search, sprintf('hsla(%sdeg,%s%%,%s%%,%s)', ...$hsla), $matches[0]);
         }, $css);
     }
 

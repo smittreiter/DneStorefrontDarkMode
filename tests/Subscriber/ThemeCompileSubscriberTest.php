@@ -5,11 +5,13 @@ namespace Dne\StorefrontDarkMode\Test\Subscriber;
 use Dne\StorefrontDarkMode\Subscriber\ThemeCompileSubscriber;
 use Generator;
 use League\Flysystem\Filesystem;
+use Padaliyajay\PHPAutoprefixer\Autoprefixer;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Shopware\Storefront\Theme\Event\ThemeCopyToLiveEvent;
 use const DIRECTORY_SEPARATOR;
+use const PHP_EOL;
 
 class ThemeCompileSubscriberTest extends TestCase
 {
@@ -52,6 +54,24 @@ class ThemeCompileSubscriberTest extends TestCase
         $this->themeFilesystem->expects(static::once())->method('put')->with($path, $expected);
 
         $this->subscriber->onThemeCopyToLive($event);
+    }
+
+    /**
+     * @dataProvider configCases
+     */
+    public function testListenToOnThemeCopyToLiveConcatenated(array $config, string $css, string $expected): void
+    {
+        $originalLineCount = substr_count($css, PHP_EOL) + 1;
+
+        $css = (new Autoprefixer($css))->compile(false) ?: '';
+
+        $expectedLines = explode(PHP_EOL, $expected);
+        $originalLines = implode(PHP_EOL, array_slice($expectedLines, 0, $originalLineCount));
+
+        $expected = (new Autoprefixer($originalLines))->compile(false);
+        $expected .= PHP_EOL . implode(PHP_EOL, array_slice($expectedLines, $originalLineCount));
+
+        $this->testListenToOnThemeCopyToLive($config, $css, $expected);
     }
 
     public function configCases(): Generator
@@ -98,7 +118,7 @@ EOF
 .white { color: rgba(255,255,255, 0.75); }
 EOF,
             <<<EOF
-.white { color: hsla(var(--color-rgb-255-255-255), 0.75); }
+.white { color: hsla(var(--color-rgb-255-255-255),0.75); }
 :root { --color-rgb-255-255-255: 0deg, 0%, 100% }
 :root[data-theme="dark"] { --color-rgb-255-255-255: 0deg, 0%, 15% }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --color-rgb-255-255-255: 0deg, 0%, 15% } }
@@ -144,8 +164,8 @@ EOF
 EOF,
             <<<EOF
 .black { color: var(--color-000); }
-.shadow-hex { box-shadow: 10px 5px 5px hsl(0deg, 0%, 0%); }
-.shadow-rgb { box-shadow: 10px 5px 5px hsla(0deg, 0%, 0%, 0.5); }
+.shadow-hex { box-shadow: 10px 5px 5px hsl(0deg,0%,0%); }
+.shadow-rgb { box-shadow: 10px 5px 5px hsla(0deg,0%,0%,0.5); }
 :root { --color-000: #000 }
 :root[data-theme="dark"] { --color-000: #fff }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --color-000: #fff } }
@@ -157,15 +177,15 @@ EOF
             <<<EOF
 .black { color: #000; }
 .white { color: #fff; }
-.green { color: #002200; }
+.green { color: #002500; }
 EOF,
             <<<EOF
 .black { color: hsl(var(--color-000)); }
 .white { color: hsl(var(--color-fff)); }
-.green { color: hsl(var(--color-002200)); }
-:root { --color-000: 0deg, 0%, 0%; --color-fff: 0deg, 0%, 100%; --color-002200: 120deg, 100%, 7% }
-:root[data-theme="dark"] { --color-000: 0deg, 0%, 100%; --color-fff: 0deg, 0%, 30%; --color-002200: 120deg, 100%, 95.1% }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --color-000: 0deg, 0%, 100%; --color-fff: 0deg, 0%, 30%; --color-002200: 120deg, 100%, 95.1% } }
+.green { color: hsl(var(--color-002500)); }
+:root { --color-000: 0deg, 0%, 0%; --color-fff: 0deg, 0%, 100%; --color-002500: 120deg, 100%, 7% }
+:root[data-theme="dark"] { --color-000: 0deg, 0%, 100%; --color-fff: 0deg, 0%, 30%; --color-002500: 120deg, 100%, 95.1% }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --color-000: 0deg, 0%, 100%; --color-fff: 0deg, 0%, 30%; --color-002500: 120deg, 100%, 95.1% } }
 EOF
         ];
 

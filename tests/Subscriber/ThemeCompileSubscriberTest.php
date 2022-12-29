@@ -132,7 +132,7 @@ EOF
         yield 'default config / convert color names' => [
             [],
             <<<EOF
-.black { color: black; background-color: red; }
+.black { color: black; background-color: red; background-image: linear-gradient(white, black); }
 .white { border: 10px White solid; font-family: 'The Black Font'; white-space: var(--white-space); }
 EOF,
             <<<EOF
@@ -140,6 +140,7 @@ EOF,
 .black {
 	color: var(--color-000);
 	background-color: red;
+	background-image: linear-gradient(var(--color-fff), var(--color-000));
 }
 
 .white {
@@ -158,7 +159,7 @@ EOF
             [],
             <<<EOF
 .black { color: #000; }
-:root { --white-immutable:  #fff; --black-immutable:rgba(255, 255, 255, 1) }
+:root { --white-immutable: #fff; --black-immutable:rgba(255, 255, 255, 1) }
 EOF,
             <<<EOF
 

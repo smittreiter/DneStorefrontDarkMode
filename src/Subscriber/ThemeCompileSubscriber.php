@@ -9,8 +9,10 @@ use Sabberworm\CSS\OutputFormat;
 use Sabberworm\CSS\Parser;
 use Sabberworm\CSS\Parsing\SourceException;
 use Sabberworm\CSS\Value\Color;
+use Sabberworm\CSS\Value\CSSFunction;
 use Sabberworm\CSS\Value\RuleValueList;
 use Sabberworm\CSS\Value\Size;
+use Sabberworm\CSS\Value\ValueList;
 use Shopware\Core\Framework\Plugin\Event\PluginPreDeactivateEvent;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Shopware\Storefront\Event\ThemeCompilerConcatenatedStylesEvent;
@@ -126,7 +128,7 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
                     continue;
                 }
 
-                if (!$value instanceof RuleValueList) {
+                if ($value instanceof Color || (!$value instanceof RuleValueList && !$value instanceof CSSFunction)) {
                     continue;
                 }
 
@@ -151,7 +153,7 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
         $this->themeFilesystem->put($cssPath, $css);
     }
 
-    private function handleValueList(array &$lightColors, array &$darkColors, RuleValueList $valueList, array $config): RuleValueList
+    private function handleValueList(array &$lightColors, array &$darkColors, ValueList $valueList, array $config): ValueList
     {
         $components = $valueList->getListComponents();
 
@@ -173,7 +175,7 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
                 continue;
             }
 
-            if ($components instanceof RuleValueList) {
+            if ($component instanceof RuleValueList || $component instanceof CSSFunction) {
                 $newComponents[] = $this->handleValueList($lightColors, $darkColors, $component, $config);
 
                 continue;

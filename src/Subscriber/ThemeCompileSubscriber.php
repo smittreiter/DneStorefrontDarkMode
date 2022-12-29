@@ -328,12 +328,21 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
         $colors = CssColors::MAPPINGS;
 
         return preg_replace_callback(
-            '/:([^;]*)(' . implode('|', array_keys($colors)) . ')( +|;)/i',
+            '/:([^;{]*?)(?<!\w)(' . implode('|', array_keys($colors)) . ')(?!\w)(.*?);/i',
             function (array $matches) use ($colors): string {
                 [$original,, $color] = $matches;
 
-                if (!\array_key_exists(strtolower($color), $colors)) {
+                if (!array_key_exists(strtolower($color), $colors)) {
                     return $original;
+                }
+
+                // check if color name is in quotes and should be ignored
+                preg_match_all('/(["\'])((?:\\1|.)*?)\1/', $original, $quotations);
+
+                foreach ($quotations[0] ?? [] as $quotation) {
+                    if (str_contains($quotation, $color)) {
+                        return $original;
+                    }
                 }
 
                 return str_replace($color, $colors[strtolower($color)], $original);

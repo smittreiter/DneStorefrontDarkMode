@@ -109,11 +109,11 @@ EOF
             [],
             <<<EOF
 .black { color: black; }
-.white { border: 10px White solid; }
+.white { border: 10px White solid; font-family: 'The Black Font'; }
 EOF,
             <<<EOF
 .black { color: var(--color-000); }
-.white { border: 10px var(--color-fff) solid; }
+.white { border: 10px var(--color-fff) solid; font-family: 'The Black Font'; }
 :root { --color-000: #000; --color-fff: #fff }
 :root[data-theme="dark"] { --color-000: #fff; --color-fff: #262626 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --color-000: #fff; --color-fff: #262626 } }

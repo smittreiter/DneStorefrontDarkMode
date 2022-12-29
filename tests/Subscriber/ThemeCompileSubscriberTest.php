@@ -128,12 +128,12 @@ EOF
         yield 'default config / convert color names' => [
             [],
             <<<EOF
-.black { color: black; }
-.white { border: 10px White solid; font-family: 'The Black Font'; }
+.black { color: black; background-color: red; }
+.white { border: 10px White solid; font-family: 'The Black Font'; white-space: var(--white-space); }
 EOF,
             <<<EOF
-.black { color: var(--color-000); }
-.white { border: 10px var(--color-fff) solid; font-family: 'The Black Font'; }
+.black { color: var(--color-000); background-color: #f00; }
+.white { border: 10px var(--color-fff) solid; font-family: 'The Black Font'; white-space: var(--white-space); }
 :root { --color-000: #000; --color-fff: #fff }
 :root[data-theme="dark"] { --color-000: #fff; --color-fff: #262626 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --color-000: #fff; --color-fff: #262626 } }

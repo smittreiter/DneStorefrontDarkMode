@@ -328,7 +328,7 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
         $colors = CssColors::MAPPINGS;
 
         return preg_replace_callback(
-            '/:([^;{]*?)(?<!\w)(' . implode('|', array_keys($colors)) . ')(?!\w)(.*?);/i',
+            '/:([^;{]*?)(?<=\s|:)(' . implode('|', array_keys($colors)) . ')(?=\s|;)(.*?);/i',
             function (array $matches) use ($colors): string {
                 [$original,, $color] = $matches;
 

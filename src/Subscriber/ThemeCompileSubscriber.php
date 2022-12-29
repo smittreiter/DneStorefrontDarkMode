@@ -5,6 +5,12 @@ namespace Dne\StorefrontDarkMode\Subscriber;
 use Dne\StorefrontDarkMode\Subscriber\Data\CssColors;
 use League\Flysystem\FileNotFoundException;
 use League\Flysystem\Filesystem;
+use Sabberworm\CSS\OutputFormat;
+use Sabberworm\CSS\Parser;
+use Sabberworm\CSS\Parsing\SourceException;
+use Sabberworm\CSS\Value\Color;
+use Sabberworm\CSS\Value\RuleValueList;
+use Sabberworm\CSS\Value\Size;
 use Shopware\Core\Framework\Plugin\Event\PluginPreDeactivateEvent;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Shopware\Storefront\Event\ThemeCompilerConcatenatedStylesEvent;
@@ -23,14 +29,17 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
 
     private SystemConfigService $configService;
 
+    private bool $debug;
+
     private bool $disabled = false;
 
     private ?string $currentSalesChannelId = null;
 
-    public function __construct(Filesystem $themeFilesystem, SystemConfigService $configService)
+    public function __construct(Filesystem $themeFilesystem, SystemConfigService $configService, bool $debug = true)
     {
         $this->themeFilesystem = $themeFilesystem;
         $this->configService = $configService;
+        $this->debug = $debug;
     }
 
     public static function getSubscribedEvents(): array
@@ -76,93 +85,190 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
         $config = $this->configService->getDomain($domain, $this->currentSalesChannelId, true);
 
         // configuration
-        $saturationThreshold = $config[$domain . '.saturationThreshold'] ?? self::DEFAULT_SATURATION_THRESHOLD;
-        $ignoredHexCodes = explode(',', str_replace(' ', '', strtolower($config[$domain . '.ignoredHexCodes'] ?? '')));
-        $invertShadows = $config[$domain . '.invertShadows'] ?? false;
-        $deactivateAutoDetect = $config[$domain . '.deactivateAutoDetect'] ?? false;
-        $useHslVariables = $config[$domain . '.useHslVariables'] ?? false;
-        $keepNamedColors = $config[$domain . 'keepNamedColors'] ?? false;
+        $config = [
+            'saturationThreshold' => $config[$domain . '.saturationThreshold'] ?? self::DEFAULT_SATURATION_THRESHOLD,
+            'minLightness' => $config[$domain . '.minLightness'] ?? self::DEFAULT_MIN_LIGHTNESS,
+            'grayscaleTint' => !empty($config[$domain . '.grayscaleTint']) ? current($this->hex2hsl($config[$domain . '.grayscaleTint'])) : null,
+            'grayscaleTintAmount' => $config[$domain . '.grayscaleTintAmount'] ?? 0,
+            'ignoredHexCodes' => explode(',', str_replace(' ', '', strtolower($config[$domain . '.ignoredHexCodes'] ?? ''))),
+            'invertShadows' => $config[$domain . '.invertShadows'] ?? false,
+            'deactivateAutoDetect' => $config[$domain . '.deactivateAutoDetect'] ?? false,
+            'useHslVariables' => $config[$domain . '.useHslVariables'] ?? false,
+            'keepNamedColors' => $config[$domain . '.keepNamedColors'] ?? false,
+        ];
 
-        if (!$keepNamedColors) {
-            $css = $this->convertColorNames($css);
-        }
-
-        if (!$invertShadows) {
-            $css = $this->conserveShadows($css);
+        try {
+            $document = (new Parser($css))->parse();
+        } catch (SourceException) {
+            return;
         }
 
         $lightColors = $darkColors = [];
 
-        // remove whitespaces before values of immutable variables to be matchable by negative lookbehind
-        $css = preg_replace('/-immutable:\s+/','-immutable:', $css);
-
-        $css = preg_replace_callback(
-            '/(?<!-immutable:)rgba\((.*?),(.*?),(.*?),(.*?)\)/',
-            function (array $matches) use (&$lightColors, &$darkColors, $config): string {
-                [$original, $r, $g, $b, $a] = $matches;
-
-                [$hue, $saturation, $lightness] = $this->rgb2hsl((float) $r, (float) $g, (float) $b);
-
-                if ((float) $a <= 0.5 && $lightness < 50) {
-                    return $original;
+        foreach ($document->getAllRuleSets() as $ruleSet) {
+            $newRuleset = clone $ruleSet;
+            foreach ($newRuleset->getRules() as $rule) {
+                if ((!$config['invertShadows'] && $rule->getRule() === 'box-shadow') || str_ends_with($rule->getRule(), '-immutable')) {
+                    continue;
                 }
 
-                $variable = sprintf('--color-rgb-%s-%s-%s', trim($r), trim($g), trim($b));
-                $lightColors[] = sprintf('%s: %sdeg, %s%%, %s%%', $variable, $hue, $saturation, $lightness);
+                $value = $rule->getValue();
 
-                [$hue, $saturation, $lightness] = $this->darken($hue, $saturation, $lightness, $config);
+                if ($value instanceof Color && $color = $this->handleColorValue($lightColors, $darkColors, $value, $config)) {
+                    $rule->setValue($color);
 
-                $darkColors[] = sprintf('%s: %sdeg, %s%%, %s%%', $variable, $hue, $saturation, $lightness);
+                    continue;
+                }
 
-                return sprintf('hsla(var(%s),%s)', $variable, trim($a));
-            },
-            $css
-        );
+                if (!$config['keepNamedColors'] && is_string($value) && $color = $this->handleColorName($lightColors, $darkColors, $value, $config)) {
+                    $rule->setValue($color);
 
-        preg_match_all('/(?<!-immutable:)#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})/', $css, $matches);
-        $hexColors = array_unique($matches[0] ?? []);
+                    continue;
+                }
 
-        foreach ($hexColors as $hexColor) {
-            if (in_array($hexColor, $ignoredHexCodes, true)) {
-                continue;
+                if (!$value instanceof RuleValueList) {
+                    continue;
+                }
+
+                $this->handleValueList($lightColors, $darkColors, $value, $config);
             }
-
-            [$hue, $saturation, $lightness] = $this->hex2hsl($hexColor);
-
-            $naturalSaturation = max($saturation - abs($lightness - 50), 0);
-            if ($naturalSaturation > $saturationThreshold) {
-                continue;
-            }
-
-            $variable = sprintf('--color-%s', ltrim($hexColor, '#'));
-            $css = str_replace($hexColor, $useHslVariables ? sprintf('hsl(var(%s))', $variable) : sprintf('var(%s)', $variable), $css);
-
-            $lightColors[] = $useHslVariables
-                ? sprintf('%s: %sdeg, %s%%, %s%%', $variable, $hue, $saturation, $lightness)
-                : sprintf('%s: %s', $variable, $hexColor);
-
-            [$hue, $saturation, $lightness] = $this->darken($hue, $saturation, $lightness, $config);
-
-            $darkColors[] = $useHslVariables
-                ? sprintf('%s: %sdeg, %s%%, %s%%', $variable, $hue, $saturation, $lightness)
-                : sprintf('%s: %s', $variable, $this->hsl2hex($hue, $saturation, $lightness));
+            $document->replace($ruleSet, $newRuleset);
         }
 
         if (empty($darkColors)) {
             return;
         }
 
-        $lightColors = array_unique($lightColors);
-        $darkColors = array_unique($darkColors);
+        $css = $document->render($this->debug ? OutputFormat::createPretty() : OutputFormat::createCompact());
 
-        $css .= PHP_EOL . sprintf(':root { %s }', implode('; ', $lightColors)) . PHP_EOL;
-        $css .= sprintf(':root[data-theme="dark"] { %s }', implode('; ', $darkColors));
+        $css .= PHP_EOL . sprintf(':root {%s}', implode(';', $lightColors)) . PHP_EOL;
+        $css .= sprintf(':root[data-theme="dark"] {%s}', implode(';', $darkColors));
 
-        if (!$deactivateAutoDetect) {
-            $css .= PHP_EOL . sprintf('@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { %s } }', implode('; ', $darkColors));
+        if (!$config['deactivateAutoDetect']) {
+            $css .= PHP_EOL . sprintf('@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {%s} }', implode(';', $darkColors));
         }
 
         $this->themeFilesystem->put($cssPath, $css);
+    }
+
+    private function handleValueList(array &$lightColors, array &$darkColors, RuleValueList $valueList, array $config): RuleValueList
+    {
+        $components = $valueList->getListComponents();
+
+        if (!is_array($components)) {
+            return $valueList;
+        }
+
+        $newComponents = [];
+        foreach ($components as $component) {
+            if ($component instanceof Color && $color = $this->handleColorValue($lightColors, $darkColors, $component, $config)) {
+                $newComponents[] = $color;
+
+                continue;
+            }
+
+            if (!$config['keepNamedColors'] && is_string($component) && $color = $this->handleColorName($lightColors, $darkColors, $component, $config)) {
+                $newComponents[] = $color;
+
+                continue;
+            }
+
+            if ($components instanceof RuleValueList) {
+                $newComponents[] = $this->handleValueList($lightColors, $darkColors, $component, $config);
+
+                continue;
+            }
+
+            $newComponents[] = $component;
+        }
+
+        $valueList->setListComponents($newComponents);
+
+        return $valueList;
+    }
+
+    private function handleColorValue(array &$lightColors, array &$darkColors, Color $color, array $config): ?RuleValueList
+    {
+        $components = $color->getListComponents();
+        $r = $components['r'] ?? null;
+        $g = $components['g'] ?? null;
+        $b = $components['b'] ?? null;
+        $a = $components['a'] ?? null;
+
+        if (!$r instanceof Size || !$g instanceof Size || !$b instanceof Size) {
+            return null;
+        }
+
+        if ($a instanceof Size) {
+            [$hue, $saturation, $lightness] = $this->rgb2hsl($r->getSize(), $g->getSize(), $b->getSize());
+
+            if ($a->getSize() <= 0.5 && $lightness < 50) {
+                return null;
+            }
+
+            $variable = sprintf('--color-rgb-%s-%s-%s', $r->getSize(), $g->getSize(), $b->getSize());
+            $lightColors[$variable] = sprintf('%s:%sdeg,%s%%,%s%%', $variable, $hue, $saturation, $lightness);
+
+            [$hue, $saturation, $lightness] = $this->darken($hue, $saturation, $lightness, $config);
+
+            $darkColors[$variable] = sprintf('%s:%sdeg,%s%%,%s%%', $variable, $hue, $saturation, $lightness);
+
+            $valueList = new RuleValueList();
+            $valueList->addListComponent(sprintf('hsla(var(%s),%s)', $variable, $a->getSize()));
+
+            return $valueList;
+        }
+
+        $hex = sprintf('#%02x%02x%02x', $r->getSize(), $g->getSize(), $b->getSize());
+        if ($hex[1] === $hex[2] && $hex[3] === $hex[4] && $hex[5] === $hex[6]) {
+            $hex = '#' . $hex[1] . $hex[3] . $hex[5];
+        }
+
+        if (in_array($hex, $config['ignoredHexCodes'], true)) {
+            return null;
+        }
+
+        return $this->setVariablesFromHex($lightColors, $darkColors, $hex, $config);
+    }
+
+    private function handleColorName(array &$lightColors, array &$darkColors, string $color, array $config): ?RuleValueList
+    {
+        $colors = CssColors::MAPPINGS;
+
+        if (!in_array(strtolower($color), array_keys($colors), true)) {
+            return null;
+        }
+
+        $hexColor = $colors[strtolower($color)];
+
+        return $this->setVariablesFromHex($lightColors, $darkColors, $hexColor, $config);
+    }
+
+    private function setVariablesFromHex(array &$lightColors, array &$darkColors, string $hexColor, array $config): ?RuleValueList
+    {
+        [$hue, $saturation, $lightness] = $this->hex2hsl($hexColor);
+
+        $naturalSaturation = max($saturation - abs($lightness - 50), 0);
+        if ($naturalSaturation > $config['saturationThreshold']) {
+            return null;
+        }
+
+        $variable = sprintf('--color-%s', ltrim($hexColor, '#'));
+
+        $lightColors[$variable] = $config['useHslVariables']
+            ? sprintf('%s:%sdeg,%s%%,%s%%', $variable, $hue, $saturation, $lightness)
+            : sprintf('%s:%s', $variable, $hexColor);
+
+        [$hue, $saturation, $lightness] = $this->darken($hue, $saturation, $lightness, $config);
+
+        $darkColors[$variable] = $config['useHslVariables']
+            ? sprintf('%s:%sdeg,%s%%,%s%%', $variable, $hue, $saturation, $lightness)
+            : sprintf('%s:%s', $variable, $this->hsl2hex($hue, $saturation, $lightness));
+
+        $valueList = new RuleValueList();
+        $valueList->addListComponent($config['useHslVariables'] ? sprintf('hsl(var(%s))', $variable) : sprintf('var(%s)', $variable));
+
+        return $valueList;
     }
 
     private function hex2hsl(string $hex): array
@@ -287,67 +393,14 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
 
     private function darken(float $hue, float $saturation, float $lightness, array $config): array
     {
-        $domain = 'DneStorefrontDarkMode.config';
-        $minLightness = $config[$domain . '.minLightness'] ?? self::DEFAULT_MIN_LIGHTNESS;
-        $grayscaleTint = !empty($config[$domain . '.grayscaleTint'])
-            ? current($this->hex2hsl($config[$domain . '.grayscaleTint']))
-            : null;
-        $grayscaleTintAmount = $config[$domain . '.grayscaleTintAmount'] ?? 0;
-
-        $lightnessIncrement = ($lightness / 100) * $minLightness;
+        $lightnessIncrement = ($lightness / 100) * $config['minLightness'];
         $lightness = min(100 - $lightness + $lightnessIncrement, 100);
 
-        if ($grayscaleTint !== null && $grayscaleTintAmount && ($hue + $saturation) === 0.0) {
-            $hue = $grayscaleTint;
-            $saturation = min($saturation + $grayscaleTintAmount, 100);
+        if ($config['grayscaleTint'] !== null && $config['grayscaleTintAmount'] && ($hue + $saturation) === 0.0) {
+            $hue = $config['grayscaleTint'];
+            $saturation = min($saturation + $config['grayscaleTintAmount'], 100);
         }
 
         return [$hue, $saturation, $lightness];
-    }
-
-    private function conserveShadows(string $css): string
-    {
-        $css = preg_replace_callback('/box-shadow:([^;]*)#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})(.*?);/', function (array $matches): string {
-            $search = sprintf('#%s', $matches[2]);
-
-            return str_replace($search, sprintf('hsl(%sdeg,%s%%,%s%%)', ...$this->hex2hsl($search)), $matches[0]);
-        }, $css);
-
-        return preg_replace_callback('/box-shadow:([^;]*)rgba\((.*?),(.*?),(.*?),(.*?)\)(.*?);/', function (array $matches): string {
-            [,, $r, $g, $b, $a] = $matches;
-            $hsla = $this->rgb2hsl((float) $r, (float) $g, (float) $b);
-            $hsla[] = trim($a);
-            $search = sprintf('rgba(%s,%s,%s,%s)', $r, $g, $b, $a);
-
-            return str_replace($search, sprintf('hsla(%sdeg,%s%%,%s%%,%s)', ...$hsla), $matches[0]);
-        }, $css);
-    }
-
-    private function convertColorNames(string $css): string
-    {
-        $colors = CssColors::MAPPINGS;
-
-        return preg_replace_callback(
-            '/:([^;{]*?)(?<=\s|:)(' . implode('|', array_keys($colors)) . ')(?=\s|;)(.*?);/i',
-            function (array $matches) use ($colors): string {
-                [$original,, $color] = $matches;
-
-                if (!array_key_exists(strtolower($color), $colors)) {
-                    return $original;
-                }
-
-                // check if color name is in quotes and should be ignored
-                preg_match_all('/(["\'])((?:\\1|.)*?)\1/', $original, $quotations);
-
-                foreach ($quotations[0] ?? [] as $quotation) {
-                    if (str_contains($quotation, $color)) {
-                        return $original;
-                    }
-                }
-
-                return str_replace($color, $colors[strtolower($color)], $original);
-            },
-            $css
-        );
     }
 }

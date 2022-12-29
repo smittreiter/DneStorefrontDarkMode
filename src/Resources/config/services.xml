@@ -8,6 +8,7 @@
         <service id="Dne\StorefrontDarkMode\Subscriber\ThemeCompileSubscriber">
             <argument type="service" id="shopware.filesystem.theme"/>
             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService" />
+            <argument>%kernel.debug%</argument>
             <tag name="kernel.event_subscriber"/>
         </service>
 

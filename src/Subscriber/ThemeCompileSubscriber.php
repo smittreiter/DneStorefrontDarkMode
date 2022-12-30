@@ -247,10 +247,7 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
             return $valueList;
         }
 
-        $hex = sprintf('#%02x%02x%02x', $r->getSize(), $g->getSize(), $b->getSize());
-        if ($hex[1] === $hex[2] && $hex[3] === $hex[4] && $hex[5] === $hex[6]) {
-            $hex = '#' . $hex[1] . $hex[3] . $hex[5];
-        }
+        $hex = $this->rgb2hex($r->getSize(), $g->getSize(), $b->getSize());
 
         if (in_array($hex, $config['ignoredHexCodes'], true)) {
             return null;
@@ -404,19 +401,22 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
             }
         }
 
-        $r = (int) ($r * 255);
-        $g = (int) ($g * 255);
-        $b = (int) ($b * 255);
+        $r *= 255;
+        $g *= 255;
+        $b *= 255;
 
-        $r = ($r <= 15) ? '0' . dechex($r) : dechex($r);
-        $g = ($g <= 15) ? '0' . dechex($g) : dechex($g);
-        $b = ($b <= 15) ? '0' . dechex($b) : dechex($b);
+        return $this->rgb2hex($r, $g, $b);
+    }
 
-        if ($r[0] === $r[1] && $g[0] === $g[1] && $b[0] === $b[1]) {
-            return '#' . $r[0] . $g[0] . $b[0];
+    private function rgb2hex(float $r, float $g, float $b): string
+    {
+        $hex = sprintf('#%02x%02x%02x', $r, $g, $b);
+
+        if ($hex[1] === $hex[2] && $hex[3] === $hex[4] && $hex[5] === $hex[6]) {
+            $hex = '#' . $hex[1] . $hex[3] . $hex[5];
         }
 
-        return '#' . $r . $g . $b;
+        return $hex;
     }
 
     private function darken(float $hue, float $saturation, float $lightness, array $config): array

@@ -79,9 +79,23 @@ EOF,
 	color: #050;
 }
 
-:root {--color-000:#000;--color-fff:#fff}
-:root[data-theme="dark"] {--color-000:#fff;--color-fff:#262626}
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {--color-000:#fff;--color-fff:#262626} }
+:root {
+	--color-000: #000;
+	--color-fff: #fff;
+}
+
+:root[data-theme="dark"] {
+	--color-000: #fff;
+	--color-fff: #262626;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		--color-000: #fff;
+		--color-fff: #262626;
+	}
+}
+
 EOF
         ];
 
@@ -106,9 +120,23 @@ EOF,
 	color: #050;
 }
 
-:root {--color-000:0deg,0%,0%;--color-fff:0deg,0%,100%}
-:root[data-theme="dark"] {--color-000:0deg,0%,100%;--color-fff:0deg,0%,15%}
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {--color-000:0deg,0%,100%;--color-fff:0deg,0%,15%} }
+:root {
+	--color-000: 0deg,0%,0%;
+	--color-fff: 0deg,0%,100%;
+}
+
+:root[data-theme="dark"] {
+	--color-000: 0deg,0%,100%;
+	--color-fff: 0deg,0%,15%;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		--color-000: 0deg,0%,100%;
+		--color-fff: 0deg,0%,15%;
+	}
+}
+
 EOF
         ];
 
@@ -123,9 +151,20 @@ EOF,
 	color: hsla(var(--color-rgb-255-255-255),0.75);
 }
 
-:root {--color-rgb-255-255-255:0deg,0%,100%}
-:root[data-theme="dark"] {--color-rgb-255-255-255:0deg,0%,15%}
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {--color-rgb-255-255-255:0deg,0%,15%} }
+:root {
+	--color-rgb-255-255-255: 0deg,0%,100%;
+}
+
+:root[data-theme="dark"] {
+	--color-rgb-255-255-255: 0deg,0%,15%;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		--color-rgb-255-255-255: 0deg,0%,15%;
+	}
+}
+
 EOF
         ];
 
@@ -149,9 +188,23 @@ EOF,
 	white-space: var(--white-space);
 }
 
-:root {--color-000:#000;--color-fff:#fff}
-:root[data-theme="dark"] {--color-000:#fff;--color-fff:#262626}
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {--color-000:#fff;--color-fff:#262626} }
+:root {
+	--color-000: #000;
+	--color-fff: #fff;
+}
+
+:root[data-theme="dark"] {
+	--color-000: #fff;
+	--color-fff: #262626;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		--color-000: #fff;
+		--color-fff: #262626;
+	}
+}
+
 EOF
         ];
 
@@ -172,9 +225,20 @@ EOF,
 	--black-immutable: rgba(255, 255, 255, 1);
 }
 
-:root {--color-000:#000}
-:root[data-theme="dark"] {--color-000:#fff}
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {--color-000:#fff} }
+:root {
+	--color-000: #000;
+}
+
+:root[data-theme="dark"] {
+	--color-000: #fff;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		--color-000: #fff;
+	}
+}
+
 EOF
         ];
 
@@ -199,9 +263,20 @@ EOF,
 	box-shadow: 10px 5px 5px rgba(0, 0, 0, .5);
 }
 
-:root {--color-000:#000}
-:root[data-theme="dark"] {--color-000:#fff}
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {--color-000:#fff} }
+:root {
+	--color-000: #000;
+}
+
+:root[data-theme="dark"] {
+	--color-000: #fff;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		--color-000: #fff;
+	}
+}
+
 EOF
         ];
 
@@ -226,9 +301,26 @@ EOF,
 	color: hsl(var(--color-002500));
 }
 
-:root {--color-000:0deg,0%,0%;--color-fff:0deg,0%,100%;--color-002500:120deg,100%,7%}
-:root[data-theme="dark"] {--color-000:0deg,0%,100%;--color-fff:0deg,0%,30%;--color-002500:120deg,100%,95.1%}
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {--color-000:0deg,0%,100%;--color-fff:0deg,0%,30%;--color-002500:120deg,100%,95.1%} }
+:root {
+	--color-000: 0deg,0%,0%;
+	--color-fff: 0deg,0%,100%;
+	--color-002500: 120deg,100%,7%;
+}
+
+:root[data-theme="dark"] {
+	--color-000: 0deg,0%,100%;
+	--color-fff: 0deg,0%,30%;
+	--color-002500: 120deg,100%,95.1%;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		--color-000: 0deg,0%,100%;
+		--color-fff: 0deg,0%,30%;
+		--color-002500: 120deg,100%,95.1%;
+	}
+}
+
 EOF
         ];
 
@@ -248,9 +340,23 @@ EOF,
 	color: hsl(var(--color-fff));
 }
 
-:root {--color-000:0deg,0%,0%;--color-fff:0deg,0%,100%}
-:root[data-theme="dark"] {--color-000:240deg,5%,100%;--color-fff:240deg,5%,15%}
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {--color-000:240deg,5%,100%;--color-fff:240deg,5%,15%} }
+:root {
+	--color-000: 0deg,0%,0%;
+	--color-fff: 0deg,0%,100%;
+}
+
+:root[data-theme="dark"] {
+	--color-000: 240deg,5%,100%;
+	--color-fff: 240deg,5%,15%;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		--color-000: 240deg,5%,100%;
+		--color-fff: 240deg,5%,15%;
+	}
+}
+
 EOF
         ];
 
@@ -265,8 +371,14 @@ EOF,
 	color: hsl(var(--color-000));
 }
 
-:root {--color-000:0deg,0%,0%}
-:root[data-theme="dark"] {--color-000:0deg,0%,100%}
+:root {
+	--color-000: 0deg,0%,0%;
+}
+
+:root[data-theme="dark"] {
+	--color-000: 0deg,0%,100%;
+}
+
 EOF
         ];
     }

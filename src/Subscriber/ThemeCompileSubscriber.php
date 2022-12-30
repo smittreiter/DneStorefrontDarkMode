@@ -5,9 +5,13 @@ namespace Dne\StorefrontDarkMode\Subscriber;
 use Dne\StorefrontDarkMode\Subscriber\Data\CssColors;
 use League\Flysystem\FileNotFoundException;
 use League\Flysystem\Filesystem;
+use Sabberworm\CSS\CSSList\AtRuleBlockList;
 use Sabberworm\CSS\OutputFormat;
 use Sabberworm\CSS\Parser;
 use Sabberworm\CSS\Parsing\SourceException;
+use Sabberworm\CSS\Parsing\UnexpectedTokenException;
+use Sabberworm\CSS\Rule\Rule;
+use Sabberworm\CSS\RuleSet\DeclarationBlock;
 use Sabberworm\CSS\Value\Color;
 use Sabberworm\CSS\Value\CSSFunction;
 use Sabberworm\CSS\Value\RuleValueList;
@@ -20,7 +24,6 @@ use Shopware\Storefront\Theme\Event\ThemeCopyToLiveEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Contracts\Service\ResetInterface;
 use const DIRECTORY_SEPARATOR;
-use const PHP_EOL;
 
 class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
 {
@@ -141,14 +144,37 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
             return;
         }
 
-        $css = $document->render($this->debug ? OutputFormat::createPretty() : OutputFormat::createCompact());
+        try {
+            $root = new DeclarationBlock();
+            $root->setSelectors(':root');
+            foreach ($lightColors as $variable => $value) {
+                $rule = new Rule($variable);
+                $rule->setValue($value);
+                $root->addRule($rule);
+            }
+            $document->append($root);
 
-        $css .= PHP_EOL . sprintf(':root {%s}', implode(';', $lightColors)) . PHP_EOL;
-        $css .= sprintf(':root[data-theme="dark"] {%s}', implode(';', $darkColors));
+            $rootDark = new DeclarationBlock();
+            $rootDark->setSelectors(':root[data-theme="dark"]');
+            foreach ($darkColors as $variable => $value) {
+                $rule = new Rule($variable);
+                $rule->setValue($value);
+                $rootDark->addRule($rule);
+            }
+            $document->append($rootDark);
 
-        if (!$config['deactivateAutoDetect']) {
-            $css .= PHP_EOL . sprintf('@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {%s} }', implode(';', $darkColors));
+            if (!$config['deactivateAutoDetect']) {
+                $mediaBlock = new AtRuleBlockList('media (prefers-color-scheme: dark)');
+                $rootDark = clone $rootDark;
+                $rootDark->setSelectors(':root:not([data-theme="light"])');
+                $mediaBlock->append($rootDark);
+                $document->append($mediaBlock);
+            }
+        } catch (UnexpectedTokenException) {
+            return;
         }
+
+        $css = $document->render($this->debug ? OutputFormat::createPretty() : OutputFormat::createCompact());
 
         $this->themeFilesystem->put($cssPath, $css);
     }
@@ -209,11 +235,11 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
             }
 
             $variable = sprintf('--color-rgb-%s-%s-%s', $r->getSize(), $g->getSize(), $b->getSize());
-            $lightColors[$variable] = sprintf('%s:%sdeg,%s%%,%s%%', $variable, $hue, $saturation, $lightness);
+            $lightColors[$variable] = sprintf('%sdeg,%s%%,%s%%', $hue, $saturation, $lightness);
 
             [$hue, $saturation, $lightness] = $this->darken($hue, $saturation, $lightness, $config);
 
-            $darkColors[$variable] = sprintf('%s:%sdeg,%s%%,%s%%', $variable, $hue, $saturation, $lightness);
+            $darkColors[$variable] = sprintf('%sdeg,%s%%,%s%%', $hue, $saturation, $lightness);
 
             $valueList = new RuleValueList();
             $valueList->addListComponent(sprintf('hsla(var(%s),%s)', $variable, $a->getSize()));
@@ -258,14 +284,14 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
         $variable = sprintf('--color-%s', ltrim($hexColor, '#'));
 
         $lightColors[$variable] = $config['useHslVariables']
-            ? sprintf('%s:%sdeg,%s%%,%s%%', $variable, $hue, $saturation, $lightness)
-            : sprintf('%s:%s', $variable, $hexColor);
+            ? sprintf('%sdeg,%s%%,%s%%', $hue, $saturation, $lightness)
+            : $hexColor;
 
         [$hue, $saturation, $lightness] = $this->darken($hue, $saturation, $lightness, $config);
 
         $darkColors[$variable] = $config['useHslVariables']
-            ? sprintf('%s:%sdeg,%s%%,%s%%', $variable, $hue, $saturation, $lightness)
-            : sprintf('%s:%s', $variable, $this->hsl2hex($hue, $saturation, $lightness));
+            ? sprintf('%sdeg,%s%%,%s%%', $hue, $saturation, $lightness)
+            : $this->hsl2hex($hue, $saturation, $lightness);
 
         $valueList = new RuleValueList();
         $valueList->addListComponent($config['useHslVariables'] ? sprintf('hsl(var(%s))', $variable) : sprintf('var(%s)', $variable));

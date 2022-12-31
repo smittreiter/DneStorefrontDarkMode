@@ -89,17 +89,17 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
         $domain = 'DneStorefrontDarkMode.config';
         $config = $this->configService->getDomain($domain, $this->currentSalesChannelId, true);
 
-        // configuration
         $config = [
-            'saturationThreshold' => $config[$domain . '.saturationThreshold'] ?? self::DEFAULT_SATURATION_THRESHOLD,
-            'minLightness' => $config[$domain . '.minLightness'] ?? self::DEFAULT_MIN_LIGHTNESS,
-            'grayscaleTint' => !empty($config[$domain . '.grayscaleTint']) ? current($this->hex2hsl($config[$domain . '.grayscaleTint'])) : null,
-            'grayscaleTintAmount' => $config[$domain . '.grayscaleTintAmount'] ?? 0,
-            'ignoredHexCodes' => explode(',', str_replace(' ', '', strtolower($config[$domain . '.ignoredHexCodes'] ?? ''))),
-            'invertShadows' => $config[$domain . '.invertShadows'] ?? false,
-            'deactivateAutoDetect' => $config[$domain . '.deactivateAutoDetect'] ?? false,
-            'useHslVariables' => $config[$domain . '.useHslVariables'] ?? false,
-            'keepNamedColors' => $config[$domain . '.keepNamedColors'] ?? false,
+            'saturationThreshold' => (int) ($config[$domain . '.saturationThreshold'] ?? self::DEFAULT_SATURATION_THRESHOLD),
+            'minLightness' => (int) ($config[$domain . '.minLightness'] ?? self::DEFAULT_MIN_LIGHTNESS),
+            'grayscaleTint' => $this->extractHueFromTintHex((string) ($config[$domain . '.grayscaleTint'] ?? '')),
+            'grayscaleTintAmount' => (int) ($config[$domain . '.grayscaleTintAmount'] ?? 0),
+            'ignoredHexCodes' => (array) ($config[$domain . '.ignoredHexCodes'] ?? []),
+            'ignoredSelectors' => (array) ($config[$domain . '.ignoredSelectors'] ?? []),
+            'invertShadows' => (bool) ($config[$domain . '.invertShadows'] ?? false),
+            'deactivateAutoDetect' => (bool) ($config[$domain . '.deactivateAutoDetect'] ?? false),
+            'useHslVariables' => (bool) ($config[$domain . '.useHslVariables'] ?? false),
+            'keepNamedColors' => (bool) ($config[$domain . '.keepNamedColors'] ?? false),
         ];
 
         try {
@@ -111,6 +111,10 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
         $lightColors = $darkColors = [];
 
         foreach ($document->getAllRuleSets() as $ruleSet) {
+            if (!empty($config['ignoredSelectors']) && $ruleSet instanceof DeclarationBlock && $this->hasIgnoredSelector($ruleSet, $config['ignoredSelectors'])) {
+                continue;
+            }
+
             $newRuleset = clone $ruleSet;
             foreach ($newRuleset->getRules() as $rule) {
                 if ((!$config['invertShadows'] && $rule->getRule() === 'box-shadow') || str_ends_with($rule->getRule(), '-immutable')) {
@@ -326,15 +330,18 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
             switch($max) {
                 case $r:
                     $h = 60 * fmod((($g - $b) / $d), 6);
-                    if ($b > $g) { //will have given a negative value for $h
+                    if ($b > $g) {
                         $h += 360;
                     }
+
                     break;
                 case $g:
                     $h = 60 * (($b - $r) / $d + 2);
+
                     break;
                 case $b:
                     $h = 60 * (($r - $g) / $d + 4);
+
                     break;
             }
         }
@@ -430,5 +437,29 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
         }
 
         return [$hue, $saturation, $lightness];
+    }
+
+    private function hasIgnoredSelector(DeclarationBlock $block, array $ignoredSelectors): bool
+    {
+        foreach ($block->getSelectors() as $selector) {
+            $selector = is_string($selector) ? $selector : $selector->getSelector();
+
+            if (in_array($selector, $ignoredSelectors, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function extractHueFromTintHex(string $hex): ?float
+    {
+        if (!preg_match('/#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})/', $hex)) {
+            return null;
+        }
+
+        [$hue] = $this->hex2hsl($hex);
+
+        return $hue;
     }
 }

@@ -381,5 +381,43 @@ EOF,
 
 EOF
         ];
+
+        yield 'ignored selectors and hex codes / hex' => [
+            [$domain . 'ignoredHexCodes' => ['#fff'], $domain . 'ignoredSelectors' => ['.my-class']],
+            <<<EOF
+.black { color: #000; }
+.foo { color: #fff; }
+.my-class { color: #010101; }
+EOF,
+            <<<EOF
+
+.black {
+	color: var(--color-000);
+}
+
+.foo {
+	color: #fff;
+}
+
+.my-class {
+	color: #010101;
+}
+
+:root {
+	--color-000: #000;
+}
+
+:root[data-theme="dark"] {
+	--color-000: #fff;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		--color-000: #fff;
+	}
+}
+
+EOF
+        ];
     }
 }

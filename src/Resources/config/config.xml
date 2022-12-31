@@ -45,13 +45,20 @@
             <min>0</min>
             <max>100</max>
         </input-field>
-        <input-field type="text">
+        <component name="sw-tagged-field">
             <name>ignoredHexCodes</name>
-            <label>Comma-seperated, unchangeable hex color values</label>
-            <label lang="de-DE">Kommaseparierte, unveränderbare Hex-Farbwerte</label>
-            <helpText>Color values included in the list are not being shaded. Example: "#123456, #654321"</helpText>
-            <helpText lang="de-DE">Farbwerte, die in der Liste enthalten sind, werden nicht schattiert. Beispiel: "#123456, #654321"</helpText>
-        </input-field>
+            <label>Unchangeable hex color values</label>
+            <label lang="de-DE">Unveränderbare Hex-Farbwerte</label>
+            <helpText>Color values included in the list are not being shaded. Example: "#123456"</helpText>
+            <helpText lang="de-DE">Farbwerte, die in der Liste enthalten sind, werden nicht schattiert. Beispiel: "#123456"</helpText>
+        </component>
+        <component name="sw-tagged-field">
+            <name>ignoredSelectors</name>
+            <label>Unchangeable CSS selectors</label>
+            <label lang="de-DE">Unveränderbare CSS Selektoren</label>
+            <helpText>Color values within the rules for the provided selectors are not being shaded. Example: ".my-parent .my-class"</helpText>
+            <helpText lang="de-DE">Farbwerte werden nicht schattiert, wenn sie in Regeln für die angegebenen Selektoren verwendet werden. Beispiel: ".my-parent .my-class"</helpText>
+        </component>
         <input-field type="bool">
             <name>invertShadows</name>
             <label>Also invert shadows</label>

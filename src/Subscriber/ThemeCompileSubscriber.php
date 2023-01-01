@@ -29,6 +29,9 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
 {
     private const DEFAULT_MIN_LIGHTNESS = 15;
     private const DEFAULT_SATURATION_THRESHOLD = 65;
+    private const DEFAULT_IGNORED_SELECTORS = [
+        '.language-flag.country-de',
+    ];
 
     private Filesystem $themeFilesystem;
 
@@ -95,7 +98,7 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
             'grayscaleTint' => $this->extractHueFromTintHex((string) ($config[$domain . '.grayscaleTint'] ?? '')),
             'grayscaleTintAmount' => (int) ($config[$domain . '.grayscaleTintAmount'] ?? 0),
             'ignoredHexCodes' => (array) ($config[$domain . '.ignoredHexCodes'] ?? []),
-            'ignoredSelectors' => (array) ($config[$domain . '.ignoredSelectors'] ?? []),
+            'ignoredSelectors' => array_merge((array) ($config[$domain . '.ignoredSelectors'] ?? []), self::DEFAULT_IGNORED_SELECTORS),
             'invertShadows' => (bool) ($config[$domain . '.invertShadows'] ?? false),
             'deactivateAutoDetect' => (bool) ($config[$domain . '.deactivateAutoDetect'] ?? false),
             'useHslVariables' => (bool) ($config[$domain . '.useHslVariables'] ?? false),

@@ -4,7 +4,7 @@ namespace Dne\StorefrontDarkMode\Test\Subscriber;
 
 use Dne\StorefrontDarkMode\Subscriber\ThemeCompileSubscriber;
 use Generator;
-use League\Flysystem\Filesystem;
+use League\Flysystem\FilesystemOperator;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
@@ -14,7 +14,7 @@ use const DIRECTORY_SEPARATOR;
 class ThemeCompileSubscriberTest extends TestCase
 {
     /**
-     * @var MockObject|Filesystem
+     * @var MockObject|FilesystemOperator
      */
     private $themeFilesystem;
 
@@ -27,7 +27,7 @@ class ThemeCompileSubscriberTest extends TestCase
 
     public function setUp(): void
     {
-        $this->themeFilesystem = $this->createMock(Filesystem::class);
+        $this->themeFilesystem = $this->createMock(FilesystemOperator::class);
         $this->configService = $this->createMock(SystemConfigService::class);
 
         $this->subscriber = new ThemeCompileSubscriber(
@@ -49,7 +49,7 @@ class ThemeCompileSubscriberTest extends TestCase
         $this->themeFilesystem->expects(static::once())->method('read')->with($path)->willReturn($css);
         $this->configService->expects(static::once())->method('getDomain')->willReturn($config);
 
-        $this->themeFilesystem->expects(static::once())->method('put')->with($path, $expected);
+        $this->themeFilesystem->expects(static::once())->method('write')->with($path, $expected);
 
         $this->subscriber->onThemeCopyToLive($event);
     }

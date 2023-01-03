@@ -3,8 +3,8 @@
 namespace Dne\StorefrontDarkMode\Subscriber;
 
 use Dne\StorefrontDarkMode\Subscriber\Data\CssColors;
-use League\Flysystem\FileNotFoundException;
-use League\Flysystem\Filesystem;
+use League\Flysystem\FilesystemException;
+use League\Flysystem\FilesystemOperator;
 use Sabberworm\CSS\CSSList\AtRuleBlockList;
 use Sabberworm\CSS\OutputFormat;
 use Sabberworm\CSS\Parser;
@@ -30,10 +30,12 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
     private const DEFAULT_MIN_LIGHTNESS = 15;
     private const DEFAULT_SATURATION_THRESHOLD = 65;
     private const DEFAULT_IGNORED_SELECTORS = [
+        '.offcanvas-backdrop',
+        '.modal-backdrop',
         '.language-flag.country-de',
     ];
 
-    private Filesystem $themeFilesystem;
+    private FilesystemOperator $themeFilesystem;
 
     private SystemConfigService $configService;
 
@@ -43,7 +45,7 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
 
     private ?string $currentSalesChannelId = null;
 
-    public function __construct(Filesystem $themeFilesystem, SystemConfigService $configService, bool $debug = true)
+    public function __construct(FilesystemOperator $themeFilesystem, SystemConfigService $configService, bool $debug = true)
     {
         $this->themeFilesystem = $themeFilesystem;
         $this->configService = $configService;
@@ -79,13 +81,13 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
     {
         $cssPath = $event->getTmpPath() . DIRECTORY_SEPARATOR . 'css' . DIRECTORY_SEPARATOR . 'all.css';
 
-        if (!$this->themeFilesystem->has($cssPath) || $this->disabled) {
-            return;
-        }
-
         try {
+            if (!$this->themeFilesystem->has($cssPath) || $this->disabled) {
+                return;
+            }
+
             $css = $this->themeFilesystem->read($cssPath);
-        } catch (FileNotFoundException) {
+        } catch (FilesystemException) {
             return;
         }
 
@@ -183,7 +185,11 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
 
         $css = $document->render($this->debug ? OutputFormat::createPretty() : OutputFormat::createCompact());
 
-        $this->themeFilesystem->put($cssPath, $css);
+        try {
+            $this->themeFilesystem->write($cssPath, $css);
+        } catch (FilesystemException) {
+            return;
+        }
     }
 
     private function handleValueList(array &$lightColors, array &$darkColors, ValueList $valueList, array $config): ValueList
@@ -236,10 +242,6 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
 
         if ($a instanceof Size) {
             [$hue, $saturation, $lightness] = $this->rgb2hsl($r->getSize(), $g->getSize(), $b->getSize());
-
-            if ($a->getSize() <= 0.5 && $lightness < 50) {
-                return null;
-            }
 
             $variable = sprintf('--color-rgb-%s-%s-%s', $r->getSize(), $g->getSize(), $b->getSize());
             $lightColors[$variable] = sprintf('%sdeg,%s%%,%s%%', $hue, $saturation, $lightness);

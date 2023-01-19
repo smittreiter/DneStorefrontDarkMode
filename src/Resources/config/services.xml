@@ -5,8 +5,8 @@
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
 
     <services>
-        <service id="Dne\StorefrontDarkMode\Subscriber\ThemeCompileSubscriber">
-            <argument type="service" id="shopware.filesystem.theme"/>
+        <service id="Dne\StorefrontDarkMode\Subscriber\ThemeCompileSubscriber" decorates="Shopware\Storefront\Theme\ScssPhpCompiler">
+            <argument type="service" id="Dne\StorefrontDarkMode\Subscriber\ThemeCompileSubscriber.inner"/>
             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService" />
             <argument>%kernel.debug%</argument>
             <tag name="kernel.event_subscriber"/>

@@ -3,8 +3,6 @@
 namespace Dne\StorefrontDarkMode\Subscriber;
 
 use Dne\StorefrontDarkMode\Subscriber\Data\CssColors;
-use League\Flysystem\FilesystemException;
-use League\Flysystem\FilesystemOperator;
 use Sabberworm\CSS\CSSList\AtRuleBlockList;
 use Sabberworm\CSS\OutputFormat;
 use Sabberworm\CSS\Parser;
@@ -20,12 +18,12 @@ use Sabberworm\CSS\Value\ValueList;
 use Shopware\Core\Framework\Plugin\Event\PluginPreDeactivateEvent;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Shopware\Storefront\Event\ThemeCompilerConcatenatedStylesEvent;
-use Shopware\Storefront\Theme\Event\ThemeCopyToLiveEvent;
+use Shopware\Storefront\Theme\AbstractCompilerConfiguration;
+use Shopware\Storefront\Theme\AbstractScssCompiler;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Contracts\Service\ResetInterface;
-use const DIRECTORY_SEPARATOR;
 
-class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
+class ThemeCompileSubscriber extends AbstractScssCompiler implements EventSubscriberInterface, ResetInterface
 {
     private const DEFAULT_MIN_LIGHTNESS = 15;
     private const DEFAULT_SATURATION_THRESHOLD = 65;
@@ -35,7 +33,7 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
         '.language-flag.country-de',
     ];
 
-    private FilesystemOperator $themeFilesystem;
+    private AbstractScssCompiler $decorated;
 
     private SystemConfigService $configService;
 
@@ -45,9 +43,9 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
 
     private ?string $currentSalesChannelId = null;
 
-    public function __construct(FilesystemOperator $themeFilesystem, SystemConfigService $configService, bool $debug = true)
+    public function __construct(AbstractScssCompiler $decorated, SystemConfigService $configService, bool $debug = true)
     {
-        $this->themeFilesystem = $themeFilesystem;
+        $this->decorated = $decorated;
         $this->configService = $configService;
         $this->debug = $debug;
     }
@@ -57,7 +55,6 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
         return [
             PluginPreDeactivateEvent::class => ['onPluginPreDeactivate', 999],
             ThemeCompilerConcatenatedStylesEvent::class => 'onThemeCompilerConcatenatedStyles',
-            ThemeCopyToLiveEvent::class => 'onThemeCopyToLive',
         ];
     }
 
@@ -77,18 +74,12 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
         $this->currentSalesChannelId = $event->getSalesChannelId();
     }
 
-    public function onThemeCopyToLive(ThemeCopyToLiveEvent $event): void
+    public function compileString(AbstractCompilerConfiguration $config, string $scss, ?string $path = null): string
     {
-        $cssPath = $event->getTmpPath() . DIRECTORY_SEPARATOR . 'css' . DIRECTORY_SEPARATOR . 'all.css';
+        $css = $this->decorated->compileString($config, $scss, $path);
 
-        try {
-            if (!$this->themeFilesystem->has($cssPath) || $this->disabled) {
-                return;
-            }
-
-            $css = $this->themeFilesystem->read($cssPath);
-        } catch (FilesystemException) {
-            return;
+        if ($this->disabled) {
+            return $css;
         }
 
         $domain = 'DneStorefrontDarkMode.config';
@@ -110,7 +101,7 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
         try {
             $document = (new Parser($css))->parse();
         } catch (SourceException) {
-            return;
+            return $css;
         }
 
         $lightColors = $darkColors = [];
@@ -150,7 +141,7 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
         }
 
         if (empty($darkColors)) {
-            return;
+            return $css;
         }
 
         try {
@@ -180,16 +171,10 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
                 $document->append($mediaBlock);
             }
         } catch (UnexpectedTokenException) {
-            return;
+            return $css;
         }
 
-        $css = $document->render($this->debug ? OutputFormat::createPretty() : OutputFormat::createCompact());
-
-        try {
-            $this->themeFilesystem->write($cssPath, $css);
-        } catch (FilesystemException) {
-            return;
-        }
+        return $document->render($this->debug ? OutputFormat::createPretty() : OutputFormat::createCompact());
     }
 
     private function handleValueList(array &$lightColors, array &$darkColors, ValueList $valueList, array $config): ValueList

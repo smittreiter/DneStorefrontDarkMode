@@ -33,16 +33,5 @@ In this example `--white-immutable` will be `#fff` in both light and dark mode.
 
 Requirements
 -----
-* 0.3.0
-    * Shopware >= 6.4.8
 * 1.0.0
-    * Shopware >= 6.5
-
-Pre-release requirements
------
-To make the plugin work with Shopware `6.4.x`, a feature flag must be enabled.
-
-In your `.env` set the following before the installation of the plugin:
-```
-FEATURE_NEXT_15381=1
-```
+    * Shopware >= 6.4.8

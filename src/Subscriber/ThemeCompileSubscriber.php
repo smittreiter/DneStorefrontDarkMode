@@ -177,6 +177,11 @@ class ThemeCompileSubscriber extends AbstractScssCompiler implements EventSubscr
         return $document->render($this->debug ? OutputFormat::createPretty() : OutputFormat::createCompact());
     }
 
+    public function filesHandledInternal(): bool
+    {
+        return $this->decorated->filesHandledInternal();
+    }
+
     private function handleValueList(array &$lightColors, array &$darkColors, ValueList $valueList, array $config): ValueList
     {
         $components = $valueList->getListComponents();

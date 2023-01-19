@@ -35,3 +35,14 @@ Requirements
 -----
 * 1.0.0
     * Shopware >= 6.4.8
+
+Screenshots
+-----
+
+![DarkMode](dist/screen1.png)
+
+![DarkMode](dist/screen2.png)
+
+![DarkMode](dist/screen3.png)
+
+![DarkMode](dist/screen4.png)

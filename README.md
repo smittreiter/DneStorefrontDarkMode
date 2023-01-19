@@ -33,7 +33,7 @@ Requirements
 -----
 
 * 1.0.0
-    * Shopware >= 6.4.8
+    * Shopware >= 6.4.18
 
 Screenshots
 -----

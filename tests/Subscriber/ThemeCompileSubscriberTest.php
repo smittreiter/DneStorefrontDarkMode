@@ -3,20 +3,18 @@
 namespace Dne\StorefrontDarkMode\Test\Subscriber;
 
 use Dne\StorefrontDarkMode\Subscriber\ThemeCompileSubscriber;
-use Generator;
-use League\Flysystem\Filesystem;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
-use Shopware\Storefront\Theme\Event\ThemeCopyToLiveEvent;
-use const DIRECTORY_SEPARATOR;
+use Shopware\Storefront\Theme\AbstractCompilerConfiguration;
+use Shopware\Storefront\Theme\AbstractScssCompiler;
 
 class ThemeCompileSubscriberTest extends TestCase
 {
     /**
-     * @var MockObject|Filesystem
+     * @var MockObject|AbstractScssCompiler
      */
-    private $themeFilesystem;
+    private $decorated;
 
     /**
      * @var MockObject|SystemConfigService
@@ -27,11 +25,11 @@ class ThemeCompileSubscriberTest extends TestCase
 
     public function setUp(): void
     {
-        $this->themeFilesystem = $this->createMock(Filesystem::class);
+        $this->decorated = $this->createMock(AbstractScssCompiler::class);
         $this->configService = $this->createMock(SystemConfigService::class);
 
         $this->subscriber = new ThemeCompileSubscriber(
-            $this->themeFilesystem,
+            $this->decorated,
             $this->configService
         );
     }
@@ -41,20 +39,15 @@ class ThemeCompileSubscriberTest extends TestCase
      */
     public function testListenToOnThemeCopyToLive(array $config, string $css, string $expected): void
     {
-        $event = new ThemeCopyToLiveEvent('', '', '', 'foobar');
-
-        $path = 'foobar' . DIRECTORY_SEPARATOR . 'css' . DIRECTORY_SEPARATOR . 'all.css';
-        $this->themeFilesystem->expects(static::once())->method('has')->with($path)->willReturn(true);
-
-        $this->themeFilesystem->expects(static::once())->method('read')->with($path)->willReturn($css);
+        $this->decorated->expects(static::once())->method('compileString')->willReturn($css);
         $this->configService->expects(static::once())->method('getDomain')->willReturn($config);
 
-        $this->themeFilesystem->expects(static::once())->method('put')->with($path, $expected);
+        $actual = $this->subscriber->compileString($this->createMock(AbstractCompilerConfiguration::class), '');
 
-        $this->subscriber->onThemeCopyToLive($event);
+        static::assertEquals($expected, $actual);
     }
 
-    public function configCases(): Generator
+    public function configCases(): iterable
     {
         $domain = 'DneStorefrontDarkMode.config.';
 

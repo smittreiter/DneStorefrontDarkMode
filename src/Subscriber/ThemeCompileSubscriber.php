@@ -3,8 +3,6 @@
 namespace Dne\StorefrontDarkMode\Subscriber;
 
 use Dne\StorefrontDarkMode\Subscriber\Data\CssColors;
-use League\Flysystem\FileNotFoundException;
-use League\Flysystem\Filesystem;
 use Sabberworm\CSS\CSSList\AtRuleBlockList;
 use Sabberworm\CSS\OutputFormat;
 use Sabberworm\CSS\Parser;
@@ -20,20 +18,22 @@ use Sabberworm\CSS\Value\ValueList;
 use Shopware\Core\Framework\Plugin\Event\PluginPreDeactivateEvent;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Shopware\Storefront\Event\ThemeCompilerConcatenatedStylesEvent;
-use Shopware\Storefront\Theme\Event\ThemeCopyToLiveEvent;
+use Shopware\Storefront\Theme\AbstractCompilerConfiguration;
+use Shopware\Storefront\Theme\AbstractScssCompiler;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Contracts\Service\ResetInterface;
-use const DIRECTORY_SEPARATOR;
 
-class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
+class ThemeCompileSubscriber extends AbstractScssCompiler implements EventSubscriberInterface, ResetInterface
 {
     private const DEFAULT_MIN_LIGHTNESS = 15;
     private const DEFAULT_SATURATION_THRESHOLD = 65;
     private const DEFAULT_IGNORED_SELECTORS = [
+        '.offcanvas-backdrop',
+        '.modal-backdrop',
         '.language-flag.country-de',
     ];
 
-    private Filesystem $themeFilesystem;
+    private AbstractScssCompiler $decorated;
 
     private SystemConfigService $configService;
 
@@ -43,9 +43,9 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
 
     private ?string $currentSalesChannelId = null;
 
-    public function __construct(Filesystem $themeFilesystem, SystemConfigService $configService, bool $debug = true)
+    public function __construct(AbstractScssCompiler $decorated, SystemConfigService $configService, bool $debug = true)
     {
-        $this->themeFilesystem = $themeFilesystem;
+        $this->decorated = $decorated;
         $this->configService = $configService;
         $this->debug = $debug;
     }
@@ -55,7 +55,6 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
         return [
             PluginPreDeactivateEvent::class => ['onPluginPreDeactivate', 999],
             ThemeCompilerConcatenatedStylesEvent::class => 'onThemeCompilerConcatenatedStyles',
-            ThemeCopyToLiveEvent::class => 'onThemeCopyToLive',
         ];
     }
 
@@ -75,18 +74,12 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
         $this->currentSalesChannelId = $event->getSalesChannelId();
     }
 
-    public function onThemeCopyToLive(ThemeCopyToLiveEvent $event): void
+    public function compileString(AbstractCompilerConfiguration $config, string $scss, ?string $path = null): string
     {
-        $cssPath = $event->getTmpPath() . DIRECTORY_SEPARATOR . 'css' . DIRECTORY_SEPARATOR . 'all.css';
+        $css = $this->decorated->compileString($config, $scss, $path);
 
-        if (!$this->themeFilesystem->has($cssPath) || $this->disabled) {
-            return;
-        }
-
-        try {
-            $css = $this->themeFilesystem->read($cssPath);
-        } catch (FileNotFoundException) {
-            return;
+        if ($this->disabled) {
+            return $css;
         }
 
         $domain = 'DneStorefrontDarkMode.config';
@@ -108,7 +101,7 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
         try {
             $document = (new Parser($css))->parse();
         } catch (SourceException) {
-            return;
+            return $css;
         }
 
         $lightColors = $darkColors = [];
@@ -148,7 +141,7 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
         }
 
         if (empty($darkColors)) {
-            return;
+            return $css;
         }
 
         try {
@@ -178,12 +171,15 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
                 $document->append($mediaBlock);
             }
         } catch (UnexpectedTokenException) {
-            return;
+            return $css;
         }
 
-        $css = $document->render($this->debug ? OutputFormat::createPretty() : OutputFormat::createCompact());
+        return $document->render($this->debug ? OutputFormat::createPretty() : OutputFormat::createCompact());
+    }
 
-        $this->themeFilesystem->put($cssPath, $css);
+    public function filesHandledInternal(): bool
+    {
+        return $this->decorated->filesHandledInternal();
     }
 
     private function handleValueList(array &$lightColors, array &$darkColors, ValueList $valueList, array $config): ValueList
@@ -236,10 +232,6 @@ class ThemeCompileSubscriber implements EventSubscriberInterface, ResetInterface
 
         if ($a instanceof Size) {
             [$hue, $saturation, $lightness] = $this->rgb2hsl($r->getSize(), $g->getSize(), $b->getSize());
-
-            if ($a->getSize() <= 0.5 && $lightness < 50) {
-                return null;
-            }
 
             $variable = sprintf('--color-rgb-%s-%s-%s', $r->getSize(), $g->getSize(), $b->getSize());
             $lightColors[$variable] = sprintf('%sdeg,%s%%,%s%%', $hue, $saturation, $lightness);

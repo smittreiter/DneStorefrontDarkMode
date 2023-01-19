@@ -100,7 +100,7 @@ class ThemeCompileSubscriber extends AbstractScssCompiler implements EventSubscr
 
         try {
             $document = (new Parser($css))->parse();
-        } catch (SourceException) {
+        } catch (SourceException $e) {
             return $css;
         }
 
@@ -170,7 +170,7 @@ class ThemeCompileSubscriber extends AbstractScssCompiler implements EventSubscr
                 $mediaBlock->append($rootDark);
                 $document->append($mediaBlock);
             }
-        } catch (UnexpectedTokenException) {
+        } catch (UnexpectedTokenException $e) {
             return $css;
         }
 

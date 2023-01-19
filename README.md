@@ -1,8 +1,6 @@
 Dark Mode for Shopware 6 Storefront
 =====
 
-### Note This plugin is still in early development and will be released for Shopware 6.5
-
 This plugin for [Shopware 6](https://www.shopware.de) adds a dark mode with auto-detection and/or toggle to the storefront.
 
 The plugin offers the following features:
@@ -33,6 +31,7 @@ In this example `--white-immutable` will be `#fff` in both light and dark mode.
 
 Requirements
 -----
+
 * 1.0.0
     * Shopware >= 6.4.8
 

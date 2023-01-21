@@ -6,8 +6,8 @@
                     aria-label="Dark/Light Mode"
                     data-dne-storefront-dark-mode-toggle="true"
                     data-dne-storefront-dark-mode-detection-disabled="{{ config('DneStorefrontDarkMode.config.deactivateAutoDetect') }}">
-                {% sw_icon 'moon' style {'size': 'xs'} %}
-                {% sw_icon 'sun' style {'size': 'xs'} %}
+                {% sw_icon 'moon' style {'size': 'xs', 'class': 'theme-dark'} %}
+                {% sw_icon 'sun' style {'size': 'xs', 'class': 'theme-light'} %}
             </button>
         </div>
     {% endblock %}

@@ -13,6 +13,15 @@ The plugin offers the following features:
 * Auto-detect preferred color scheme
 * Toggle between light and dark mode within storefront
 
+Requirements
+-----
+
+* 1.0.0
+    * Shopware >= 6.4.18
+
+Development
+-----
+
 ### Using immutable colors
 
 By declaring CSS variables using the suffix `-immutable`, color values may be stored that are supposed to be immutable, disregarding whether dark or light mode is used.
@@ -28,6 +37,18 @@ body {
 ```
 
 In this example `--white-immutable` will be `#fff` in both light and dark mode.
+
+### Custom rules for dark mode
+
+If you want to introduce rules specifically for the dark mode, you may use the `[data-theme="dark"]` selector on the root element.
+
+```scss
+:root[data-theme="dark"] {
+    h1 {
+        background: none;
+    }
+}
+```
 
 ### Customize dark/light mode toggle
 
@@ -53,12 +74,6 @@ By default, the button for the dark/light toggle will be shown in the top bar of
 <span class="icon-theme-light">light theme</span>
 <span class="icon-theme-dark">dark theme</span>
 ```
-
-Requirements
------
-
-* 1.0.0
-    * Shopware >= 6.4.18
 
 Screenshots
 -----

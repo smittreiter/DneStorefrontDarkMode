@@ -18,10 +18,7 @@ class SystemConfigChangedSubscriber implements EventSubscriberInterface, ResetIn
 {
     private ThemeService $themeService;
 
-    /**
-     * @var EntityRepository
-     */
-    private $salesChannelRepository;
+    private EntityRepository $salesChannelRepository;
 
     private EventDispatcherInterface $dispatcher;
 
@@ -29,10 +26,7 @@ class SystemConfigChangedSubscriber implements EventSubscriberInterface, ResetIn
 
     private array $compileSalesChannelIds = [];
 
-    /**
-     * @param EntityRepository $salesChannelRepository
-     */
-    public function __construct(ThemeService $themeService, $salesChannelRepository, EventDispatcherInterface $dispatcher)
+    public function __construct(ThemeService $themeService, EntityRepository $salesChannelRepository, EventDispatcherInterface $dispatcher)
     {
         $this->themeService = $themeService;
         $this->salesChannelRepository = $salesChannelRepository;

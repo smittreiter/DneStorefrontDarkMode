@@ -1,11 +1,11 @@
 {
     "name": "dne/storefront-dark-mode",
     "description": "Storefront Dark Mode",
-    "version": "2.0.0",
+    "version": "3.0.0",
     "type": "shopware-platform-plugin",
     "license": "MIT",
     "require": {
-        "shopware/core": "~v6.5.0"
+        "shopware/core": "~v6.6.0"
     },
     "authors": [
         {
@@ -43,8 +43,8 @@
         }
     },
     "suggest": {
-        "shopware/storefront": "Require '6.5'.",
-        "shopware/administration": "Require '6.5'. Allows you to to set up the plugin easily"
+        "shopware/storefront": "Require '6.6'.",
+        "shopware/administration": "Require '6.6'. Allows you to to set up the plugin easily"
     },
     "conflict": {
         "shopware/storefront": "<6,>=7",

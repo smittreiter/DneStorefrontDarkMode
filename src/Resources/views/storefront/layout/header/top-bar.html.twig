@@ -1,6 +1,17 @@
 {% sw_extends '@Storefront/storefront/layout/header/top-bar.html.twig' %}
 
-{% block layout_header_top_bar_language %}
-    {% sw_include '@DneStorefrontDarkMode/storefront/layout/dark-mode-toggle.html.twig' %}
-    {{ parent() }}
+{% block layout_header_top_bar_inner %}
+            {% if header.languages.count > 1 or header.currencies.count > 1 or config('DneStorefrontDarkMode.config.hideToggle') != true %}
+                <nav class="top-bar-nav d-flex justify-content-end gap-3"
+                     aria-label="{{ 'header.topBarAriaLabel'|trans|striptags }}">
+                    {% block layout_header_top_bar_language %}
+                        {% sw_include '@DneStorefrontDarkMode/storefront/layout/dark-mode-toggle.html.twig' %}
+                        {% sw_include '@Storefront/storefront/layout/header/actions/language-widget.html.twig' %}
+                    {% endblock %}
+
+                    {% block layout_header_top_bar_currency %}
+                        {{ parent() }}
+                    {% endblock %}
+                </nav>
+            {% endif %}
 {% endblock %}

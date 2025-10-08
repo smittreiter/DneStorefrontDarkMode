@@ -1,4 +1,11 @@
 .DS_Store
 .idea
 phpstan.neon
+
+# Allow plugin compiled files
+!src/Resources/app/storefront/dist
+
 .shopware-extension.yml
+
+**/.tmp/vite/*
+src/Resources/app/administration/.tmp/*
